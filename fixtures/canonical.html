@@ -47,16 +47,17 @@
         ok
       </button>
 
-      <!-- VIOLATION (warn): 30px icon off canonical {16,20,24,32,40,48} → snap 32. -->
+      <!-- VIOLATION (warn): 37px icon is a genuine outlier (>2px from every
+           anchor) → snap to 40. (30px would now pass, within ±2 of 32.) -->
       <svg
         id="icon-bad"
         data-testid="icon-bad"
         class="icon"
-        width="30"
-        height="30"
-        viewBox="0 0 30 30"
+        width="37"
+        height="37"
+        viewBox="0 0 37 37"
       >
-        <rect width="30" height="30" fill="#99f" />
+        <rect width="37" height="37" fill="#99f" />
       </svg>
 
       <!-- OK: 24px icon is canonical. -->

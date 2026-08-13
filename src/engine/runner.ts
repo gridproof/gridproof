@@ -31,7 +31,7 @@ export interface RunAuditParams {
 }
 
 function severityRank(s: Violation["severity"]): number {
-  return s === "error" ? 0 : 1;
+  return s === "error" ? 0 : s === "warn" ? 1 : 2; // info sorts last / caps last
 }
 
 /** Rules that only make sense on Tailwind pages (gated when non-Tailwind). */
@@ -124,10 +124,13 @@ export function runAudit(params: RunAuditParams): AuditReport {
 
   const byRule: Record<string, number> = {};
   let errors = 0;
+  let infos = 0;
   for (const v of sorted) {
     byRule[v.ruleId] = (byRule[v.ruleId] ?? 0) + 1;
     if (v.severity === "error") errors++;
+    else if (v.severity === "info") infos++;
   }
+  const warns = total - errors - infos;
 
   return {
     url,
@@ -138,7 +141,7 @@ export function runAudit(params: RunAuditParams): AuditReport {
       scale: [...TAILWIND_SPACING_SCALE_PX],
       canonicalSizes: config.canonicalSizes,
     },
-    summary: { total, byRule, errors, warns: total - errors },
+    summary: { total, byRule, errors, warns, infos },
     violations,
     truncated,
     suppressedCount,

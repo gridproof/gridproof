@@ -1,5 +1,5 @@
 import type { Violation } from "../../report/schema.js";
-import { isNearAny, nearestInScale } from "../../util/nearest.js";
+import { nearestInScale } from "../../util/nearest.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
@@ -12,8 +12,6 @@ import type { Rule, RuleContext } from "../rule.js";
  *    `minTapTarget` (44) else `error` with a WCAG 2.5.8 note.
  */
 
-const TOLERANCE = 0.6;
-
 function pxStr(n: number): string {
   return `${Number.isInteger(n) ? n : Number(n.toFixed(1))}px`;
 }
@@ -21,17 +19,25 @@ function pxStr(n: number): string {
 export const canonicalSizeRule: Rule = {
   id: "canonical-size",
   check(ctx: RuleContext): Violation[] {
-    const { canonicalSizes, minTapTarget, tapTargetBreakpoint, minIconSize } =
-      ctx.config;
+    const {
+      canonicalSizes,
+      minTapTarget,
+      tapTargetBreakpoint,
+      minIconSize,
+      iconTolerance,
+    } = ctx.config;
     const interactiveSeverity = ctx.config.rules["canonical-size"] ?? "error";
     const violations: Violation[] = [];
 
-    // Off-canonical iff at/above the icon floor AND not within tolerance of ANY
-    // canonical size. The floor is applied per-dimension so a thin icon's small
-    // side (e.g. a 6×20 chevron) isn't flagged; the tolerance absorbs subpixel
-    // rendering (24.5 ≈ 24, 11.5 ≈ 12).
+    // Anchor tolerance: an icon size is valid when within ±iconTolerance (default
+    // 2px) of ANY canonical anchor. Real icon sets (lucide/heroicons) use 18/22/26
+    // routinely, so strict set membership over-flags; tolerance catches true drift
+    // (e.g. 37 → 40) without nagging, and also absorbs subpixel rendering. The
+    // floor is applied per-dimension so a thin icon's small side isn't flagged.
+    const withinAnchor = (v: number): boolean =>
+      canonicalSizes.some((a) => Math.abs(v - a) <= iconTolerance); // inclusive ±tol
     const offCanonical = (v: number): boolean =>
-      v >= minIconSize && !isNearAny(v, canonicalSizes, TOLERANCE);
+      v >= minIconSize && !withinAnchor(v);
 
     // WCAG 2.5.8 (44px) is a TOUCH criterion — irrelevant for desktop pointer
     // nav. Tap-target checks run only below the mobile breakpoint; icon checks

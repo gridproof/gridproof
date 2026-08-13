@@ -64,7 +64,6 @@ export const spacingScaleRule: Rule = {
   check(ctx: RuleContext): Violation[] {
     const { baseUnit, allowedValues } = ctx.config;
     const severity = ctx.config.rules["spacing-scale"] ?? "warn";
-    const violations: Violation[] = [];
 
     const offends = (v: number): boolean => {
       const valid =
@@ -74,22 +73,24 @@ export const spacingScaleRule: Rule = {
       return !valid;
     };
 
+    interface Candidate {
+      el: CollectedElement;
+      property: string;
+      actual: string;
+      expected: string;
+    }
+    const candidates: Candidate[] = [];
+
     const push = (
       el: CollectedElement,
       property: string,
       v: number,
     ): void => {
-      const actual = pxStr(v);
-      const expected = pxStr(nearestMultiple(v, baseUnit));
-      violations.push({
-        ruleId: "spacing-scale",
-        severity,
-        selector: el.selector,
+      candidates.push({
+        el,
         property,
-        actual,
-        expected,
-        fixHint: sourceHint(el, property, actual, expected),
-        snippet: el.snippet,
+        actual: pxStr(v),
+        expected: pxStr(nearestMultiple(v, baseUnit)),
       });
     };
 
@@ -136,6 +137,37 @@ export const spacingScaleRule: Rule = {
         const v = parseConcretePx(el.computed[key]);
         if (v !== null && offends(v)) push(el, label, v);
       }
+    }
+
+    // Systematic downgrade to "info": an off-grid/off-scale value repeated across
+    // ≥3 distinct elements is library-sourced (component-lib tokens the user
+    // didn't author and can't fix without forking) — true, but not actionable as
+    // a warn. A one-off off-grid value (e.g. authored py-[13px]) stays a warn.
+    const SYSTEMATIC_THRESHOLD = 3;
+    const elementsByValue = new Map<string, Set<string>>();
+    for (const c of candidates) {
+      let set = elementsByValue.get(c.actual);
+      if (set === undefined) {
+        set = new Set<string>();
+        elementsByValue.set(c.actual, set);
+      }
+      set.add(c.el.selector);
+    }
+
+    const violations: Violation[] = [];
+    for (const c of candidates) {
+      const systematic =
+        (elementsByValue.get(c.actual)?.size ?? 0) >= SYSTEMATIC_THRESHOLD;
+      violations.push({
+        ruleId: "spacing-scale",
+        severity: systematic ? "info" : severity,
+        selector: c.el.selector,
+        property: c.property,
+        actual: c.actual,
+        expected: c.expected,
+        fixHint: sourceHint(c.el, c.property, c.actual, c.expected),
+        snippet: c.el.snippet,
+      });
     }
 
     return violations;

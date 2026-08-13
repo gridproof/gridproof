@@ -132,7 +132,7 @@ export function registerAuditTool(server: McpServer): void {
 
         const s = report.summary;
         const summary =
-          `gp_audit: ${s.total} violation(s) (${s.errors} error, ${s.warns} warn) ` +
+          `gp_audit: ${s.total} violation(s) (${s.errors} error, ${s.warns} warn, ${s.infos} info) ` +
           `on ${args.url} at ${args.viewport.width}×${args.viewport.height}. ` +
           `byRule: ${Object.entries(s.byRule)
             .map(([r, n]) => `${r}=${n}`)

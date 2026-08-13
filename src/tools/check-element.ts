@@ -125,7 +125,7 @@ export function registerCheckElementTool(server: McpServer): void {
       const clean = s.total === 0;
       const summary =
         `gp_check_element: ${s.total} violation(s) for "${args.selector}" ` +
-        `(${s.errors} error, ${s.warns} warn) at ${args.viewport.width}×${args.viewport.height}.` +
+        `(${s.errors} error, ${s.warns} warn, ${s.infos} info) at ${args.viewport.width}×${args.viewport.height}.` +
         (clean ? " Clean — fix verified." : "") +
         (report.suppressedCount > 0
           ? ` ${report.suppressedCount} suppressed.`

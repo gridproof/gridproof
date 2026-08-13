@@ -67,6 +67,36 @@ describe("spacing-scale side-collapse", () => {
   });
 });
 
+describe("spacing-scale info tier (systematic vs one-off)", () => {
+  it("an off-grid value repeated across 3+ elements → info (library-sourced)", () => {
+    const els = [1, 2, 3].map((i) =>
+      makeElement({
+        selector: `#s${i}`,
+        computed: { paddingTop: "9px", paddingBottom: "9px" },
+      }),
+    );
+    const v = run(...els);
+    expect(v).toHaveLength(3); // one collapsed "padding" per element
+    expect(v.every((x) => x.severity === "info")).toBe(true);
+    expect(v.every((x) => x.actual === "9px")).toBe(true);
+  });
+
+  it("a one-off off-grid value (py-[13px]) stays warn (authored drift)", () => {
+    const v = run(makeElement({ selector: "#one", computed: { paddingTop: "13px" } }));
+    expect(v).toHaveLength(1);
+    expect(v[0]?.severity).toBe("warn");
+  });
+
+  it("two occurrences are not yet systematic → still warn", () => {
+    const v = run(
+      makeElement({ selector: "#a", computed: { paddingTop: "9px" } }),
+      makeElement({ selector: "#b", computed: { paddingTop: "9px" } }),
+    );
+    expect(v).toHaveLength(2);
+    expect(v.every((x) => x.severity === "warn")).toBe(true);
+  });
+});
+
 describe("spacing-scale core", () => {
   // v1.2: Tailwind half-steps (1.5/2.5/3.5 = 6/10/14px) are valid, not drift.
   it("passes Tailwind half-steps 6/10/14px (py-1.5 etc.)", () => {

@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG: GridproofConfig = {
   minTapTarget: 44,
   tapTargetBreakpoint: 768,
   minIconSize: 10,
+  iconTolerance: 2,
   assumeTailwind: "auto",
   rules: {
     "spacing-scale": "warn",

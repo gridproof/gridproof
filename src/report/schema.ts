@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { ruleIdSchema, severitySchema } from "../config/schema.js";
+import { ruleIdSchema } from "../config/schema.js";
+
+/**
+ * Violation severity. `error`/`warn` come from config; `info` is assigned by a
+ * rule for findings that are true but not user-actionable (e.g. systematic
+ * off-grid spacing sourced from a third-party component library).
+ */
+export const violationSeveritySchema = z.enum(["error", "warn", "info"]);
+export type ViolationSeverity = z.infer<typeof violationSeveritySchema>;
 
 /**
  * Report schema (spec §6). Defined in full now; consumed by the rule engine
@@ -25,8 +33,8 @@ export type FixHint = z.infer<typeof fixHintSchema>;
 
 export const violationSchema = z.object({
   ruleId: ruleIdSchema,
-  /** off-scale = warn by default; tap-target < 44 = error. */
-  severity: severitySchema,
+  /** error (tap-target), warn (off-scale, default), or info (systematic/library). */
+  severity: violationSeveritySchema,
   /** stable CSS selector (id > data-testid > shortest unique class > nth path). */
   selector: z.string(),
   /** e.g. "padding-top", "gap", "width". */
@@ -56,6 +64,7 @@ export const auditReportSchema = z.object({
     byRule: z.record(z.string(), z.number()),
     errors: z.number(),
     warns: z.number(),
+    infos: z.number(),
   }),
   violations: z.array(violationSchema),
   truncated: z.boolean(),

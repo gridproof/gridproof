@@ -54,6 +54,7 @@ export function mergeConfig(
     tapTargetBreakpoint:
       file.tapTargetBreakpoint ?? DEFAULT_CONFIG.tapTargetBreakpoint,
     minIconSize: file.minIconSize ?? DEFAULT_CONFIG.minIconSize,
+    iconTolerance: file.iconTolerance ?? DEFAULT_CONFIG.iconTolerance,
     assumeTailwind: file.assumeTailwind ?? DEFAULT_CONFIG.assumeTailwind,
     rules: { ...DEFAULT_CONFIG.rules, ...(file.rules ?? {}) },
     suppress: file.suppress ?? DEFAULT_CONFIG.suppress,

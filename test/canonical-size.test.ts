@@ -30,17 +30,34 @@ describe("canonical-size icons", () => {
     ).toHaveLength(0);
   });
 
-  it("30px icon → warn snapping to nearest canonical (32px)", () => {
+  // v1.4: anchor tolerance (±2). Real icon sizes 18/22/26 sit near anchors → OK.
+  it("icons at 18/22/26px are within ±2 of an anchor → 0 violations", () => {
+    for (const s of [18, 22, 26]) {
+      expect(
+        run(makeElement({ isIcon: true, rect: { width: s, height: s } })),
+      ).toHaveLength(0);
+    }
+  });
+
+  it("13px icon is within ±2 of 12/14 → 0 violations", () => {
+    expect(
+      run(makeElement({ isIcon: true, rect: { width: 13, height: 13 } })),
+    ).toHaveLength(0);
+  });
+
+  // A genuine outlier (>2px from every anchor) is still flagged (was: 30px→32px,
+  // but 30 is now within ±2 of 32; 37 is 3px from 40).
+  it("37px icon (outlier) → warn snapping to nearest anchor (40px)", () => {
     const v = run(
       makeElement({
-        selector: "#i30",
+        selector: "#i37",
         isIcon: true,
-        rect: { width: 30, height: 30 },
+        rect: { width: 37, height: 37 },
       }),
     );
     expect(v).toHaveLength(1);
     expect(v[0]?.severity).toBe("warn");
-    expect(v[0]?.expected).toBe("32px");
+    expect(v[0]?.expected).toBe("40px");
   });
 
   it("subpixel icon 24.5px is within tolerance of 24 → 0 violations", () => {

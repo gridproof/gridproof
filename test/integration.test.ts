@@ -271,12 +271,12 @@ describe("integration: canonical-size (canonical.html)", () => {
     ).toBe(false);
   });
 
-  it("flags a 30px icon as a warn snapping to nearest canonical (32px)", async () => {
+  it("flags a 37px icon (outlier) as a warn snapping to nearest anchor (40px)", async () => {
     const report = await auditFixture("canonical.html");
     const icon = report.violations.find((v) => v.selector === "#icon-bad");
     expect(icon).toBeDefined();
     expect(icon?.severity).toBe("warn");
-    expect(icon?.expected).toBe("32px");
+    expect(icon?.expected).toBe("40px");
     // the 24px icon is canonical
     expect(
       report.violations.some((v) => v.selector === "#icon-ok"),

@@ -57,6 +57,12 @@ export const gridproofConfigSchema = z.object({
   /** Minimum rendered box (px) for an element to count as an icon (default 10). */
   minIconSize: z.number().positive(),
   /**
+   * Tolerance (px) around each canonical anchor size for icons (default 2).
+   * Real icon sets (lucide/heroicons) use 18/22/26 routinely, so an icon is
+   * valid when within ±iconTolerance of any anchor; only true outliers flag.
+   */
+  iconTolerance: z.number().nonnegative(),
+  /**
    * Whether to run the Tailwind-specific rules (spacing-scale, arbitrary-value).
    * "auto" (default) = detect Tailwind on the page; true = always run;
    * false = always skip them (accessibility rules still run).
