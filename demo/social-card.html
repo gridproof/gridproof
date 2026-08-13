@@ -27,26 +27,36 @@ html, body { width:1200px; height:630px; overflow:hidden; background:var(--bg); 
 }
 
 .content {
-  position:relative; z-index:1; display:flex; align-items:center;
-  height:100%; padding:0 72px; gap:60px;
+  position:relative; z-index:1; display:flex;
+  height:100%;
 }
 
-.left { flex:0 0 auto; max-width:460px; }
-.logo { font-family:var(--mono); font-weight:700; font-size:42px; letter-spacing:-0.01em; color:var(--muted); margin-bottom:24px; }
+.left { flex:0 0 600px; display:flex; flex-direction:column; justify-content:center; padding:0 40px 0 64px; }
+.logo { font-family:var(--mono); font-weight:700; font-size:84px; letter-spacing:-0.01em; color:var(--muted); margin-bottom:26px; }
 .logo b { color:var(--text); }
-.tagline { font-size:24px; line-height:1.44; color:var(--text); font-weight:500; letter-spacing:-0.01em; margin-bottom:22px; }
+.tagline { font-size:48px; line-height:1.22; color:var(--text); font-weight:500; letter-spacing:-0.01em; margin-bottom:24px; }
 .tagline .hi { color:var(--ok); }
-.sub { font-family:var(--mono); font-size:14.5px; color:var(--faint); line-height:1.6; }
-.chipbar { display:flex; flex-wrap:wrap; gap:9px; margin-top:28px; }
-.chip { font-family:var(--mono); font-size:12.5px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:5px 10px; background:rgba(255,255,255,0.015); }
+.sub { font-family:var(--mono); font-size:29px; color:var(--faint); line-height:1.35; }
+.chipbar { display:flex; flex-wrap:wrap; gap:11px; margin-top:26px; }
+.chip { font-family:var(--mono); font-size:25px; color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:6px 14px; background:rgba(255,255,255,0.015); }
 
-.right { flex:1 1 auto; display:flex; justify-content:center; align-items:center; }
-.frame {
-  width:432px; height:246px; border-radius:12px; overflow:hidden;
-  border:1px solid var(--line); background:var(--panel);
-  box-shadow: 0 30px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02);
+/* Right half: the report interface itself, rendered 3x larger than the prior
+   0.5 scale (=1.5) and cropped to its top-left corner — the panel is flush to
+   the card's right/top/bottom edges, so only that corner is visible. */
+.right {
+  flex:0 0 600px; position:relative; overflow:hidden;
+  border-left:1px solid var(--line); background:var(--panel);
 }
-.frame iframe { width:864px; height:900px; border:0; transform:scale(0.5); transform-origin:top left; pointer-events:none; }
+.right::after {
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(90deg, transparent 52%, var(--bg) 96%),
+    linear-gradient(180deg, transparent 55%, var(--bg) 97%);
+}
+.right iframe {
+  position:absolute; top:0; left:0; width:864px; height:900px; border:0;
+  transform:scale(1.5); transform-origin:top left; pointer-events:none;
+}
 </style>
 </head>
 <body>
@@ -63,7 +73,7 @@ html, body { width:1200px; height:630px; overflow:hidden; background:var(--bg); 
         </div>
       </div>
       <div class="right">
-        <div class="frame"><iframe src="demo-report-mobile.html" scrolling="no"></iframe></div>
+        <iframe src="demo-report-mobile.html" scrolling="no"></iframe>
       </div>
     </div>
   </div>
