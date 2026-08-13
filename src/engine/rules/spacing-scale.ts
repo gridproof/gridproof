@@ -1,4 +1,4 @@
-import type { CollectedComputed } from "../collector.js";
+import type { CollectedComputed, CollectedElement } from "../collector.js";
 import { sourceHint } from "../../report/source-hint.js";
 import type { Violation } from "../../report/schema.js";
 import { isOnGrid, nearestMultiple } from "../../util/nearest.js";
@@ -7,29 +7,35 @@ import type { Rule, RuleContext } from "../rule.js";
 /**
  * spacing-scale (spec §7.3). For each computed margin/padding/gap px value
  * v > 0: valid iff it is within 0.6px of a multiple of `baseUnit`, OR within
- * 0.6px of a value in `allowedValues` (default [1, 2] for borders/hairlines).
- * Only concrete px values are judged — 0, `auto`, `%`, and viewport units are
- * ignored (they never reach here as parseable px). Violations carry the nearest
- * valid multiple in `expected`.
+ * 0.6px of a value in `allowedValues` (default [1, 2]). Only concrete px values
+ * are judged — 0, `auto`, `%`, and viewport units never parse and are ignored.
+ *
+ * Side-collapse (§12 noise reduction): when ≥2 sides of the same box's
+ * padding/margin group share the same off-scale value, emit ONE violation with
+ * the shorthand property ("padding"/"margin"). Distinct per-side values stay
+ * separate.
  */
 
 const TOLERANCE = 0.6;
 
-/** Computed longhands we judge, mapped to their CSS property labels. */
-const JUDGED: ReadonlyArray<readonly [keyof CollectedComputed, string]> = [
-  ["marginTop", "margin-top"],
-  ["marginRight", "margin-right"],
-  ["marginBottom", "margin-bottom"],
-  ["marginLeft", "margin-left"],
+/** padding/margin side longhands, in T-R-B-L order, with their CSS labels. */
+const PADDING_SIDES: ReadonlyArray<readonly [keyof CollectedComputed, string]> = [
   ["paddingTop", "padding-top"],
   ["paddingRight", "padding-right"],
   ["paddingBottom", "padding-bottom"],
   ["paddingLeft", "padding-left"],
+];
+const MARGIN_SIDES: ReadonlyArray<readonly [keyof CollectedComputed, string]> = [
+  ["marginTop", "margin-top"],
+  ["marginRight", "margin-right"],
+  ["marginBottom", "margin-bottom"],
+  ["marginLeft", "margin-left"],
+];
+const GAP_PROPS: ReadonlyArray<readonly [keyof CollectedComputed, string]> = [
   ["rowGap", "row-gap"],
   ["columnGap", "column-gap"],
 ];
 
-/** Parse a concrete `"13px"` value; null for 0, `auto`, `normal`, `%`, vw/vh, etc. */
 function parseConcretePx(value: string): number | null {
   const m = /^(\d+(?:\.\d+)?)px$/.exec(value.trim());
   if (m === null) return null;
@@ -48,30 +54,61 @@ export const spacingScaleRule: Rule = {
     const severity = ctx.config.rules["spacing-scale"] ?? "warn";
     const violations: Violation[] = [];
 
+    const offends = (v: number): boolean => {
+      const onGrid = isOnGrid(v, baseUnit, TOLERANCE);
+      const allowed = allowedValues.some((a) => Math.abs(v - a) < TOLERANCE);
+      return !onGrid && !allowed;
+    };
+
+    const push = (
+      el: CollectedElement,
+      property: string,
+      v: number,
+    ): void => {
+      const actual = pxStr(v);
+      const expected = pxStr(nearestMultiple(v, baseUnit));
+      violations.push({
+        ruleId: "spacing-scale",
+        severity,
+        selector: el.selector,
+        property,
+        actual,
+        expected,
+        fixHint: sourceHint(el, property, actual, expected),
+        snippet: el.snippet,
+      });
+    };
+
+    /** Judge a padding/margin group, collapsing shared off-scale sides. */
+    const judgeGroup = (
+      el: CollectedElement,
+      sides: ReadonlyArray<readonly [keyof CollectedComputed, string]>,
+      shorthand: string,
+    ): void => {
+      // Group offending sides by their (string) value, preserving side order.
+      const byValue = new Map<number, string[]>();
+      for (const [key, label] of sides) {
+        const v = parseConcretePx(el.computed[key]);
+        if (v === null || !offends(v)) continue;
+        const list = byValue.get(v);
+        if (list) list.push(label);
+        else byValue.set(v, [label]);
+      }
+      for (const [v, labels] of byValue) {
+        if (labels.length >= 2) {
+          push(el, shorthand, v); // collapsed shorthand violation
+        } else {
+          push(el, labels[0] as string, v);
+        }
+      }
+    };
+
     for (const el of ctx.elements) {
-      for (const [key, label] of JUDGED) {
-        const raw = el.computed[key];
-        const v = parseConcretePx(raw);
-        if (v === null) continue;
-
-        const onScale = isOnGrid(v, baseUnit, TOLERANCE);
-        const allowed = allowedValues.some((a) => Math.abs(v - a) < TOLERANCE);
-        if (onScale || allowed) continue;
-
-        const expectedPx = nearestMultiple(v, baseUnit);
-        const expected = pxStr(expectedPx);
-        const actual = pxStr(v);
-
-        violations.push({
-          ruleId: "spacing-scale",
-          severity,
-          selector: el.selector,
-          property: label,
-          actual,
-          expected,
-          fixHint: sourceHint(el, label, actual, expected),
-          snippet: el.snippet,
-        });
+      judgeGroup(el, PADDING_SIDES, "padding");
+      judgeGroup(el, MARGIN_SIDES, "margin");
+      for (const [key, label] of GAP_PROPS) {
+        const v = parseConcretePx(el.computed[key]);
+        if (v !== null && offends(v)) push(el, label, v);
       }
     }
 

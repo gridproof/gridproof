@@ -1,5 +1,6 @@
 import {
   PX_TO_TAILWIND_KEY,
+  TAILWIND_SPACING_PX,
   TAILWIND_SPACING_SCALE_PX,
 } from "../../config/defaults.js";
 import type { Violation } from "../../report/schema.js";
@@ -27,6 +28,27 @@ export interface ArbitraryMatch {
   px: number;
   /** Original unit as written. */
   unit: "px" | "rem";
+}
+
+/** A standard (non-arbitrary) Tailwind spacing class, e.g. `p-3` → 12px. */
+export interface StandardMatch {
+  prefix: string;
+  key: string;
+  px: number;
+}
+
+const STANDARD_CLASS_RE =
+  /^(-?(?:[mp][trblxy]?|gap|space-[xy]|w|h|size|inset|top|right|bottom|left))-(px|\d+(?:\.\d+)?)$/;
+
+/** Parse a standard Tailwind spacing class token; null if not one. */
+export function parseStandardSpacingClass(token: string): StandardMatch | null {
+  const m = STANDARD_CLASS_RE.exec(token);
+  if (m === null) return null;
+  const prefix = m[1] as string;
+  const key = m[2] as string;
+  const px = TAILWIND_SPACING_PX[key];
+  if (px === undefined) return null;
+  return { prefix, key, px };
 }
 
 /** Parse a single class token; null if it is not an arbitrary spacing/size class. */

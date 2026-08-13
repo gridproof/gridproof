@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — canonical sizes & tap targets</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      :root {
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      /* Reset UA button spacing so only canonical-size fires (no off-scale UA padding). */
+      button {
+        margin: 0;
+        padding: 0;
+        border: 1px solid #557;
+        background: #eee;
+      }
+      .icon {
+        display: inline-block;
+      }
+      .stack {
+        display: block;
+      }
+      .stack > * {
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 0 0 16px">Canonical-size fixture</h1>
+
+    <div class="stack">
+      <!-- VIOLATION (error): 32px tap target < 44px → WCAG 2.5.8. -->
+      <button id="tap-bad" data-testid="tap-bad" style="width: 32px; height: 32px">
+        x
+      </button>
+
+      <!-- OK: 48px tap target ≥ 44px. -->
+      <button id="tap-ok" data-testid="tap-ok" style="width: 48px; height: 48px">
+        ok
+      </button>
+
+      <!-- VIOLATION (warn): 30px icon off canonical {16,20,24,32,40,48} → snap 32. -->
+      <svg
+        id="icon-bad"
+        data-testid="icon-bad"
+        class="icon"
+        width="30"
+        height="30"
+        viewBox="0 0 30 30"
+      >
+        <rect width="30" height="30" fill="#99f" />
+      </svg>
+
+      <!-- OK: 24px icon is canonical. -->
+      <svg
+        id="icon-ok"
+        data-testid="icon-ok"
+        class="icon"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+      >
+        <rect width="24" height="24" fill="#9c9" />
+      </svg>
+    </div>
+  </body>
+</html>

@@ -1,4 +1,5 @@
 import type { Page } from "playwright";
+import type { IgnoreSpec, SuppressSelector } from "../util/suppress.js";
 
 /**
  * Collector (spec §7.2). One in-page pass — a single `page.evaluate`, no
@@ -49,12 +50,23 @@ export interface CollectedElement {
   computed: CollectedComputed;
   /** Parent's computed `display` (context for gap/layout rules). */
   parentDisplay: string | null;
+  /** Stable selector of the parent element (grouping for gap-consistency). */
+  parentSelector: string | null;
   /** Zero-based index among element siblings. */
   siblingIndex: number;
   /** `aria-hidden="true"` on this element (icons handled separately by rules). */
   ariaHidden: boolean;
   /** Raw `data-gp-ignore` attribute value if present (suppression, Day 3). */
   gpIgnore: string | null;
+  /**
+   * Effective suppression for this element, from inline `data-gp-ignore`
+   * (self + ancestors) merged with matching config selector entries.
+   */
+  ignore: IgnoreSpec;
+  /** Matches `button, a[href], input, [role=button]` (canonical-size targets). */
+  isInteractive: boolean;
+  /** svg, img inside a button/link, or class matching /icon/i (canonical-size). */
+  isIcon: boolean;
   /** Raw inline `style` attribute value if present (source-hint branch 3). */
   styleAttr: string | null;
   /** outerHTML head of the element, truncated to 120 chars (§6 snippet). */
@@ -78,6 +90,8 @@ export interface CollectOptions {
   selector?: string | undefined;
   /** Max elements to collect (spec §7.2 cap). */
   cap?: number;
+  /** Config selector-suppressions to fold into each element's `ignore`. */
+  suppressSelectors?: SuppressSelector[];
 }
 
 const DEFAULT_CAP = 3000;
@@ -93,9 +107,10 @@ export async function collectGeometry(
 ): Promise<CollectionResult> {
   const cap = options.cap ?? DEFAULT_CAP;
   const rootSelector = options.selector ?? "body";
+  const suppressSelectors = options.suppressSelectors ?? [];
 
   return page.evaluate(
-    ({ rootSelector, cap }): CollectionResult => {
+    ({ rootSelector, cap, suppressSelectors }): CollectionResult => {
       const round05 = (n: number): number => Math.round(n * 2) / 2;
 
       const root: Element | null = document.querySelector(rootSelector);
@@ -162,6 +177,57 @@ export async function collectGeometry(
         return segments.join(" > ");
       };
 
+      /** Effective suppression: inline data-gp-ignore (self+ancestors) + config selectors. */
+      const computeIgnore = (el: Element): IgnoreSpec => {
+        let all = false;
+        const rules = new Set<string>();
+
+        let node: Element | null = el;
+        while (node !== null) {
+          const attr = node.getAttribute("data-gp-ignore");
+          if (attr !== null) {
+            if (attr.trim() === "") {
+              all = true;
+            } else {
+              for (const r of attr.trim().split(/\s+/)) rules.add(r);
+            }
+          }
+          node = node.parentElement;
+        }
+
+        for (const ss of suppressSelectors) {
+          let matched = false;
+          try {
+            matched = el.matches(ss.selector);
+          } catch {
+            matched = false;
+          }
+          if (matched) {
+            if (ss.all) all = true;
+            else for (const r of ss.rules) rules.add(r);
+          }
+        }
+
+        if (all) return "all";
+        if (rules.size > 0) return Array.from(rules);
+        return null;
+      };
+
+      const isInteractiveEl = (el: Element): boolean => {
+        try {
+          return el.matches('button, a[href], input, [role="button"]');
+        } catch {
+          return false;
+        }
+      };
+
+      const isIconEl = (el: Element): boolean => {
+        const tag = el.tagName.toLowerCase();
+        if (tag === "svg") return true;
+        if (tag === "img" && el.closest("button, a[href]") !== null) return true;
+        return Array.from(el.classList).some((c) => /icon/i.test(c));
+      };
+
       const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "HEAD", "META", "LINK", "TITLE"]);
 
       const elements: CollectedElement[] = [];
@@ -198,6 +264,7 @@ export async function collectGeometry(
           const parent = el.parentElement;
           const parentDisplay =
             parent !== null ? getComputedStyle(parent).display : null;
+          const parentSelector = parent !== null ? buildSelector(parent) : null;
 
           let siblingIndex = 0;
           if (parent) {
@@ -236,9 +303,13 @@ export async function collectGeometry(
               position: cs.position,
             },
             parentDisplay,
+            parentSelector,
             siblingIndex,
             ariaHidden: el.getAttribute("aria-hidden") === "true",
             gpIgnore: el.getAttribute("data-gp-ignore"),
+            ignore: computeIgnore(el),
+            isInteractive: isInteractiveEl(el),
+            isIcon: isIconEl(el),
             styleAttr: el.getAttribute("style"),
             snippet: (() => {
               const oh = el.outerHTML;
@@ -256,6 +327,6 @@ export async function collectGeometry(
 
       return { rootFound: true, count: elements.length, capped, cap, elements };
     },
-    { rootSelector, cap },
+    { rootSelector, cap, suppressSelectors },
   );
 }

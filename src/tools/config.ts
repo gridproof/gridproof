@@ -37,7 +37,17 @@ export function registerConfigTool(server: McpServer): void {
       },
     },
     async (args: ConfigInput) => {
-      const { config, source } = await loadConfig(args.cwd ?? process.cwd());
+      let config;
+      let source: string | null;
+      try {
+        ({ config, source } = await loadConfig(args.cwd ?? process.cwd()));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text" as const, text: msg }],
+          isError: true,
+        };
+      }
 
       const structuredContent = {
         source, // absolute path of config file, or null when pure defaults

@@ -15,7 +15,10 @@ import {
   TAILWIND_SPACING_SCALE_PX,
 } from "../config/defaults.js";
 import type { CollectedElement } from "../engine/collector.js";
-import { parseArbitraryClass } from "../engine/rules/arbitrary-value.js";
+import {
+  parseArbitraryClass,
+  parseStandardSpacingClass,
+} from "../engine/rules/arbitrary-value.js";
 import { nearestInScale } from "../util/nearest.js";
 import type { FixHint } from "./schema.js";
 
@@ -89,12 +92,34 @@ export function sourceHint(
     }
   }
 
-  // (3) Inline style declares the property (minimal, non-throwing).
+  // (2) A standard Tailwind class explains the value → point at that class
+  // instead of proposing an arbitrary/inline change (no extra noise).
+  if (actualPx !== null) {
+    for (const token of el.classList) {
+      const std = parseStandardSpacingClass(token);
+      if (std === null) continue;
+      if (
+        Math.abs(std.px - actualPx) < TOLERANCE &&
+        prefixExplainsProperty(std.prefix, property)
+      ) {
+        return {
+          kind: "manual",
+          from: token,
+          note: `${property} is set by the standard class "${token}"; change that class to reach ${expected}`,
+        };
+      }
+    }
+  }
+
+  // (3) Inline style declares the property → css-value fix on the inline style.
   const family = propertyFamily(property);
-  if (el.styleAttr !== null && el.styleAttr.includes(family)) {
+  if (
+    el.styleAttr !== null &&
+    (el.styleAttr.includes(property) || el.styleAttr.includes(family))
+  ) {
     return {
       kind: "css-value",
-      note: `update ${property} in the inline style to ${expected}`,
+      note: `update ${property} in the inline style from ${actual} to ${expected}`,
     };
   }
 

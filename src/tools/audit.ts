@@ -6,6 +6,7 @@ import { collectGeometry } from "../engine/collector.js";
 import { RenderError, withRenderedPage } from "../engine/renderer.js";
 import { registry } from "../engine/rule.js";
 import { runAudit } from "../engine/runner.js";
+import { suppressSelectorsFromConfig } from "../util/suppress.js";
 
 /**
  * gp_audit (spec §5.1) — primary tool. Renders the URL, collects geometry in a
@@ -67,10 +68,26 @@ export function registerAuditTool(server: McpServer): void {
     },
     async (args: AuditInput) => {
       try {
+        // Load config first — selector-form suppressions must be matched in-page.
+        let config;
+        try {
+          ({ config } = await loadConfig());
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return {
+            content: [{ type: "text" as const, text: msg }],
+            isError: true,
+          };
+        }
+
         const collection = await withRenderedPage(
           args.url,
           args.viewport,
-          (page) => collectGeometry(page, { selector: args.selector }),
+          (page) =>
+            collectGeometry(page, {
+              selector: args.selector,
+              suppressSelectors: suppressSelectorsFromConfig(config.suppress),
+            }),
         );
 
         if (!collection.rootFound) {
@@ -86,7 +103,6 @@ export function registerAuditTool(server: McpServer): void {
           };
         }
 
-        const { config } = await loadConfig();
         const report = runAudit({
           url: args.url,
           viewport: args.viewport,
@@ -107,6 +123,10 @@ export function registerAuditTool(server: McpServer): void {
           extra.push(
             `Showing worst ${report.violations.length} of ${report.summary.total}; raise "maxViolations" to see more.`,
           );
+        }
+
+        if (report.suppressedCount > 0) {
+          extra.push(`${report.suppressedCount} finding(s) suppressed.`);
         }
 
         const s = report.summary;

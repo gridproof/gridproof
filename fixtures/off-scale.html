@@ -46,5 +46,13 @@
       0.98rem padding (~15.7px) — should NOT be flagged (subpixel tolerance).
     </div>
     <div id="clean-box" data-testid="clean">8px padding — clean.</div>
+    <div
+      id="ignored-box"
+      data-testid="ignored"
+      data-gp-ignore
+      style="margin-top: 16px; padding-top: 13px"
+    >
+      13px padding-top — suppressed via data-gp-ignore (counted, not listed).
+    </div>
   </body>
 </html>

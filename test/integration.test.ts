@@ -98,3 +98,53 @@ describe("integration: clean.html", () => {
     expect(report.violations).toHaveLength(0);
   });
 });
+
+describe("integration: suppression via data-gp-ignore (off-scale.html)", () => {
+  it("counts the suppressed node but does not list it", async () => {
+    const report = await auditFixture("off-scale.html");
+    expect(report.suppressedCount).toBeGreaterThanOrEqual(1);
+    expect(
+      report.violations.some((v) => v.selector === "#ignored-box"),
+    ).toBe(false);
+  });
+});
+
+describe("integration: gap-consistency (gaps.html)", () => {
+  it("fires exactly once on the ragged list, silent on the gap-4 list", async () => {
+    const report = await auditFixture("gaps.html");
+    const gaps = report.violations.filter(
+      (v) => v.ruleId === "gap-consistency",
+    );
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0]?.selector).toBe("#ragged-list");
+    expect(gaps[0]?.fixHint.kind).toBe("container-gap");
+  });
+});
+
+describe("integration: canonical-size (canonical.html)", () => {
+  it("flags a 32px tap target as an error citing WCAG 2.5.8", async () => {
+    const report = await auditFixture("canonical.html");
+    const tap = report.violations.find((v) => v.selector === "#tap-bad");
+    expect(tap).toBeDefined();
+    expect(tap?.ruleId).toBe("canonical-size");
+    expect(tap?.severity).toBe("error");
+    expect(tap?.expected).toBe("44px");
+    expect(tap?.fixHint.note ?? "").toContain("WCAG 2.5.8");
+    // the 48px button is fine
+    expect(
+      report.violations.some((v) => v.selector === "#tap-ok"),
+    ).toBe(false);
+  });
+
+  it("flags a 30px icon as a warn snapping to nearest canonical (32px)", async () => {
+    const report = await auditFixture("canonical.html");
+    const icon = report.violations.find((v) => v.selector === "#icon-bad");
+    expect(icon).toBeDefined();
+    expect(icon?.severity).toBe("warn");
+    expect(icon?.expected).toBe("32px");
+    // the 24px icon is canonical
+    expect(
+      report.violations.some((v) => v.selector === "#icon-ok"),
+    ).toBe(false);
+  });
+});

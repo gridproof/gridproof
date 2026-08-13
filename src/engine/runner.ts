@@ -1,6 +1,11 @@
 import { TAILWIND_SPACING_SCALE_PX } from "../config/defaults.js";
 import type { GridproofConfig, RuleId } from "../config/schema.js";
 import type { AuditReport, Violation } from "../report/schema.js";
+import {
+  isViolationSuppressed,
+  suppressedValues,
+  type IgnoreSpec,
+} from "../util/suppress.js";
 import type { CollectedElement } from "./collector.js";
 import type { RuleRegistry } from "./rule.js";
 
@@ -34,9 +39,38 @@ export function runAudit(params: RunAuditParams): AuditReport {
   const selected = rules ? registry.select(rules) : registry.all();
 
   const ctx = { config, elements };
-  const found: Violation[] = [];
+  const produced: Violation[] = [];
   for (const rule of selected) {
-    found.push(...rule.check(ctx));
+    produced.push(...rule.check(ctx));
+  }
+
+  // Suppression (§8): drop inline/selector-ignored and value-suppressed
+  // findings, counting them. Selector-form suppressions are already folded into
+  // each element's `ignore` by the collector; value-form is matched here.
+  const ignoreBySelector = new Map<string, IgnoreSpec>();
+  for (const el of elements) {
+    if (!ignoreBySelector.has(el.selector)) {
+      ignoreBySelector.set(el.selector, el.ignore);
+    }
+  }
+  const values = suppressedValues(config.suppress);
+
+  const found: Violation[] = [];
+  let suppressedCount = 0;
+  for (const v of produced) {
+    const ignore = ignoreBySelector.get(v.selector) ?? null;
+    if (
+      isViolationSuppressed({
+        ignore,
+        ruleId: v.ruleId,
+        actual: v.actual,
+        values,
+      })
+    ) {
+      suppressedCount++;
+    } else {
+      found.push(v);
+    }
   }
 
   // DOM order = first occurrence index of a selector in document-ordered elements.
@@ -80,6 +114,6 @@ export function runAudit(params: RunAuditParams): AuditReport {
     summary: { total, byRule, errors, warns: total - errors },
     violations,
     truncated,
-    suppressedCount: 0,
+    suppressedCount,
   };
 }
