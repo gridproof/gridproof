@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.gridproof/gridproof",
+  "title": "Gridproof",
+  "description": "Gridproof your UI — automated spacing & grid QA in the agent loop (MCP server).",
+  "version": "0.1.2",
+  "websiteUrl": "https://www.npmjs.com/package/gridproof",
+  "repository": {
+    "url": "https://github.com/gridproof/gridproof",
+    "source": "github",
+    "id": "1332548300"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "gridproof",
+      "version": "0.1.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

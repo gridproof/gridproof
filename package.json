@@ -1,7 +1,8 @@
 {
   "name": "gridproof",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Gridproof your UI — automated spacing & grid QA in the agent loop (MCP server).",
+  "mcpName": "io.github.gridproof/gridproof",
   "type": "module",
   "bin": {
     "gridproof": "dist/index.js"
