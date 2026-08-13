@@ -3,20 +3,29 @@ import {
   TAILWIND_SPACING_SCALE_PX,
 } from "../../config/defaults.js";
 import type { Violation } from "../../report/schema.js";
-import { isNearAny, isOnGrid, nearestInScale } from "../../util/nearest.js";
+import { nearestInScale } from "../../util/nearest.js";
 import type { CollectedElement } from "../collector.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
- * gap-consistency (spec §7.3, v1.2 — conservative). For a flex/grid LAYOUT
- * container (≥3 non-text children, no positive gap), compute inter-sibling
- * distances from rects and emit ONE container-level violation if the spread
- * exceeds `baseUnit`. Skips content stacks (text-majority children),
- * absolutely-positioned overlays, and lists whose gaps are already valid
- * Tailwind steps — those are intentional rhythm, not drift.
+ * gap-consistency (spec §7.3, v1.4 — list-vs-layout aware). Targets a real
+ * content LIST: a flex/grid container with ≥3 non-text children and no positive
+ * gap, whose ragged inter-sibling distances should be unified under one `gap`.
+ * Emits ONE container-level violation.
+ *
+ * Distinguishes lists from layout wrappers with combined signals (a page-section
+ * wrapper spaced 200–2066px apart is structure, not a list):
+ *  - absolute ceiling: max distance ≤ `maxListGap` (default 96px);
+ *  - order-of-magnitude: max distance ≤ SPREAD_RATIO_MAX × min distance;
+ *  - text-majority children (content stack) and overlapping/negative distances
+ *    are skipped.
+ * Runs only on Tailwind-detected pages (gated in the runner) — a `set gap-N`
+ * suggestion is meaningless off-Tailwind.
  */
 
 const TOLERANCE = 0.6;
+/** A real ragged list's gaps stay within one order of magnitude. */
+const SPREAD_RATIO_MAX = 4;
 
 /** Inline / text-level tags: a container of these is a content stack, not a layout list. */
 const TEXT_TAGS = new Set([
@@ -48,6 +57,7 @@ export const gapConsistencyRule: Rule = {
   check(ctx: RuleContext): Violation[] {
     const severity = ctx.config.rules["gap-consistency"] ?? "warn";
     const baseUnit = ctx.config.baseUnit;
+    const maxListGap = ctx.config.maxListGap;
     const violations: Violation[] = [];
 
     // Group children by their parent's stable selector.
@@ -99,22 +109,24 @@ export const gapConsistencyRule: Rule = {
         distances.push(Math.round(d * 2) / 2);
       }
 
+      const minSib = Math.min(...distances);
+      const maxSib = Math.max(...distances);
+
       // Non-positive distances mean children overlap / use negative margins —
       // not a clean list a single `gap` could unify. Skip (layout wrapper).
-      if (Math.min(...distances) <= 0) continue;
+      if (minSib <= 0) continue;
 
-      const spread = Math.max(...distances) - Math.min(...distances);
+      // Absolute ceiling: real list gaps are small; large distances are page
+      // structure (sections), not a ragged list gap. Kills layout-wrapper FPs.
+      if (maxSib > maxListGap) continue;
+
+      // Order-of-magnitude sanity: children spaced e.g. 28px and 689px are
+      // structure, not "an inconsistent list". A real ragged list stays within
+      // ~one order of magnitude.
+      if (maxSib > SPREAD_RATIO_MAX * minSib) continue;
+
+      const spread = maxSib - minSib;
       if (spread <= TOLERANCE || spread <= baseUnit) continue;
-
-      // If every gap is already a valid Tailwind step / on-grid, the varied
-      // spacing is intentional rhythm, not drift.
-      const allValid = distances.every(
-        (d) =>
-          d > 0 &&
-          (isOnGrid(d, baseUnit, TOLERANCE) ||
-            isNearAny(d, TAILWIND_SPACING_SCALE_PX, TOLERANCE)),
-      );
-      if (allValid) continue;
 
       const mean =
         distances.reduce((s, d) => s + d, 0) / distances.length;

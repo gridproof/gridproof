@@ -63,6 +63,17 @@ export const gridproofConfigSchema = z.object({
    */
   iconTolerance: z.number().nonnegative(),
   /**
+   * Max aspect ratio (max/min side) before an "icon" is treated as a wordmark /
+   * logo and skipped (default 2.5). A 62×18 wordmark is a logo, not a 62px icon.
+   */
+  iconAspectRatioMax: z.number().positive(),
+  /**
+   * Max inter-sibling distance (px) for gap-consistency to treat a container as
+   * a content LIST rather than a layout wrapper (default 96). Page sections
+   * spaced hundreds of px apart are structure, not a ragged list gap.
+   */
+  maxListGap: z.number().positive(),
+  /**
    * Whether to run the Tailwind-specific rules (spacing-scale, arbitrary-value).
    * "auto" (default) = detect Tailwind on the page; true = always run;
    * false = always skip them (accessibility rules still run).

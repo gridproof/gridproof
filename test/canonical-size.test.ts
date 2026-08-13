@@ -77,6 +77,20 @@ describe("canonical-size icons", () => {
       run(makeElement({ isIcon: true, rect: { width: 6, height: 6 } })),
     ).toHaveLength(0);
   });
+
+  it("a 62×18 wordmark (aspect > 2.5) is a logo → not flagged", () => {
+    expect(
+      run(makeElement({ isIcon: true, rect: { width: 62, height: 18 } })),
+    ).toHaveLength(0);
+  });
+
+  it("a square 62×62 icon (same max dim) is still judged → flagged to 48", () => {
+    const v = run(
+      makeElement({ isIcon: true, rect: { width: 62, height: 62 } }),
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.expected).toBe("48px");
+  });
 });
 
 describe("canonical-size tap targets", () => {

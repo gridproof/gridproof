@@ -25,6 +25,7 @@ export const canonicalSizeRule: Rule = {
       tapTargetBreakpoint,
       minIconSize,
       iconTolerance,
+      iconAspectRatioMax,
     } = ctx.config;
     const interactiveSeverity = ctx.config.rules["canonical-size"] ?? "error";
     const violations: Violation[] = [];
@@ -49,7 +50,12 @@ export const canonicalSizeRule: Rule = {
       const h = el.rect.height;
 
       // Icons — dimensions must be near-canonical (per-dimension floor applied).
-      if (el.isIcon) {
+      // Wordmark guard: a far-from-square icon (e.g. a 62×18 logo) is a wordmark,
+      // not a 62px icon — skip the canonical judgment.
+      const minSide = Math.min(w, h);
+      const isWordmark =
+        minSide <= 0 || Math.max(w, h) / minSide > iconAspectRatioMax;
+      if (el.isIcon && !isWordmark) {
         const wOff = offCanonical(w);
         const hOff = offCanonical(h);
         if (wOff || hOff) {

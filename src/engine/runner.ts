@@ -34,10 +34,14 @@ function severityRank(s: Violation["severity"]): number {
   return s === "error" ? 0 : s === "warn" ? 1 : 2; // info sorts last / caps last
 }
 
-/** Rules that only make sense on Tailwind pages (gated when non-Tailwind). */
+/**
+ * Rules that only make sense on Tailwind pages (gated when non-Tailwind).
+ * gap-consistency suggests `set gap-N` classes, meaningless off-Tailwind.
+ */
 const TAILWIND_ONLY_RULES: ReadonlySet<RuleId> = new Set([
   "spacing-scale",
   "arbitrary-value",
+  "gap-consistency",
 ]);
 
 export function runAudit(params: RunAuditParams): AuditReport {
