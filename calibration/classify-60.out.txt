@@ -1,0 +1,108 @@
+=== BUCKET TOTALS ===
+ 2552  tap-target-mobile  [TP]
+  533  component-lib-spacing  [info]
+  336  non-canonical-real-icon  [TP]
+  327  gap-layout-wrapper-FP  [clear-FP-newclass]
+  302  arbitrary-spacing-drift  [TP]
+  161  genuine-spacing-drift  [TP]
+   46  arbitrary-hygiene  [borderline]
+    2  gap-borderline  [borderline]
+
+=== CATEGORY TOTALS ===
+grand total findings (reachable): 4259
+    0  clear-FP  0.0%
+  327  clear-FP-newclass  7.7%
+   48  borderline  1.1%
+  533  info  12.5%
+ 3351  TP  78.7%
+
+non-canonical-real-icon split: in-range(<=48px)=271  above-ceiling(48-64px)=65
+
+=== REGRESSION SENTINELS (must be 0): 0 total ===
+PASS — zero sentinel hits.
+
+=== GATE / DETECTION (reachable=57) ===
+[A] vs first-pass GUESS: 44/57 = 77.2%
+    FN(guess): 5 :: ui.shadcn.com/examples/cards, ui.shadcn.com/examples/mail, ui.shadcn.com/examples/forms, cal.com/, linear.app/
+    FP(guess): 8 :: getbootstrap.com/docs/5.3/examples/dashboard/, getbootstrap.com/docs/5.3/examples/album/, www.reddit.com/, medium.com/, www.notion.com/, react.dev/, pro.ant.design/, semantic-ui.com/
+[B] vs EVIDENCE ground truth: 50/57 = 87.7%
+    FN(true, TW gated off): 3
+      FN https://ui.shadcn.com/examples/cards
+      FN https://ui.shadcn.com/examples/mail
+      FN https://ui.shadcn.com/examples/forms
+    FP(true, non-TW run as TW): 4
+      FP https://getbootstrap.com/docs/5.3/examples/dashboard/
+      FP https://getbootstrap.com/docs/5.3/examples/album/
+      FP https://www.notion.com/
+      FP https://semantic-ui.com/
+
+=== SKIPPED (3) ===
+  https://www.chakra-ui.com/ | d:Could not reach https://www.chakra-ui.co | m:Could not reach https://www.chakra-ui.co
+  https://www.cnn.com/ | d:Could not reach https://www.cnn.com/. Is | m:Could not reach https://www.cnn.com/. Is
+  https://www.figma.com/ | d:Could not reach https://www.figma.com/.  | m:Could not reach https://www.figma.com/. 
+
+reachable sites: 57/60
+
+=== PER-SITE TABLE (markdown) ===
+| URL | fw-guess | type | isTailwind | mob-tw | desktop | mobile | dominant bucket | skip |
+|-----|----------|------|:----------:|:------:|--------:|-------:|-----------------|:----:|
+| https://ui.shadcn.com/ | tailwind | component-lib | TW | TW | 1 | 6 | tap-target-mobile |  |
+| https://ui.shadcn.com/examples/dashboard | tailwind | dashboard | TW | TW | 3 | 7 | tap-target-mobile |  |
+| https://ui.shadcn.com/examples/cards | tailwind | cards | non-TW❗ | non-TW | 0 | 0 | — |  |
+| https://ui.shadcn.com/examples/mail | tailwind | app | non-TW❗ | non-TW | 0 | 0 | — |  |
+| https://ui.shadcn.com/examples/forms | tailwind | forms | non-TW❗ | non-TW | 0 | 0 | — |  |
+| https://tailwindcss.com/ | tailwind | marketing | TW | TW | 8 | 37 | tap-target-mobile |  |
+| https://flowbite.com/ | tailwind | components | TW | TW | ERR | 50 | tap-target-mobile |  |
+| https://daisyui.com/ | tailwind | components | TW | TW | 78 | 92 | tap-target-mobile |  |
+| https://www.tremor.so/ | tailwind | dashboard | TW | TW | 1 | 28 | tap-target-mobile |  |
+| https://preline.co/ | tailwind | components | TW | TW | 6 | 60 | tap-target-mobile |  |
+| https://dub.co/ | tailwind | saas | TW | TW | 49 | 92 | arbitrary-spacing-drift |  |
+| https://cal.com/ | tailwind | saas | non-TW❗ | non-TW | 1 | 86 | tap-target-mobile |  |
+| https://resend.com/ | tailwind | marketing | TW | TW | 9 | 78 | tap-target-mobile |  |
+| https://supabase.com/ | tailwind | marketing | TW | TW | 15 | 23 | non-canonical-real-icon |  |
+| https://astro.build/ | tailwind | marketing | TW | TW | 46 | 84 | tap-target-mobile |  |
+| https://precedent.dev/ | tailwind | starter | TW | TW | 0 | 8 | tap-target-mobile |  |
+| https://vercel.com/ | tailwind | marketing | TW | TW | 6 | 94 | tap-target-mobile |  |
+| https://getbootstrap.com/ | bootstrap | bootstrap | non-TW | non-TW | 0 | 54 | tap-target-mobile |  |
+| https://getbootstrap.com/docs/5.3/examples/dashboard/ | bootstrap | bootstrap-dash | TW❗ | TW | 0 | 6 | tap-target-mobile |  |
+| https://mui.com/ | mui | css-in-js | non-TW | non-TW | 2 | 54 | tap-target-mobile |  |
+| https://ant.design/ | antd | antd | non-TW | non-TW | 0 | 83 | tap-target-mobile |  |
+| https://www.chakra-ui.com/ | chakra | css-in-js | — | — | ERR | ERR | — | SKIP |
+| https://styled-components.com/ | styled-components | css-in-js | non-TW | non-TW | 1 | 23 | tap-target-mobile |  |
+| https://getbootstrap.com/docs/5.3/examples/album/ | bootstrap | bootstrap-gallery | TW❗ | TW | 1 | 25 | tap-target-mobile |  |
+| https://linear.app/ | tailwind | saas | non-TW❗ | non-TW | 0 | 93 | tap-target-mobile |  |
+| https://railway.com/ | tailwind | saas | TW | TW | 4 | 8 | tap-target-mobile |  |
+| https://clerk.com/ | tailwind | saas | TW | TW | 77 | 115 | tap-target-mobile |  |
+| https://upstash.com/ | tailwind | saas | TW | TW | 13 | 59 | tap-target-mobile |  |
+| https://trigger.dev/ | tailwind | saas | TW | TW | 105 | 234 | tap-target-mobile |  |
+| https://planetscale.com/ | tailwind | saas | TW | TW | 0 | 50 | tap-target-mobile |  |
+| https://www.hyperui.dev/ | tailwind | components | TW | TW | 0 | 9 | tap-target-mobile |  |
+| https://tailgrids.com/ | tailwind | components | TW | TW | 59 | 81 | component-lib-spacing |  |
+| https://www.nytimes.com/ | custom | news | non-TW | non-TW | 10 | 120 | tap-target-mobile |  |
+| https://www.theguardian.com/international | custom | news | non-TW | non-TW | 22 | 84 | tap-target-mobile |  |
+| https://www.bbc.com/ | custom | news | non-TW | non-TW | 38 | 166 | gap-layout-wrapper-FP |  |
+| https://www.cnn.com/ | custom | news | — | — | ERR | ERR | — | SKIP |
+| https://www.amazon.com/dp/B08N5WRWNW | custom | ecommerce-product | non-TW | non-TW | 0 | 3 | tap-target-mobile |  |
+| https://www.reddit.com/ | custom | social | TW❗ | TW | 0 | 1 | tap-target-mobile |  |
+| https://medium.com/ | custom | media | TW❗ | TW | 11 | 14 | genuine-spacing-drift |  |
+| https://github.com/ | primer | dev-landing | non-TW | non-TW | 2 | 86 | tap-target-mobile |  |
+| https://stripe.com/ | custom | saas-marketing | non-TW | non-TW | 7 | 143 | tap-target-mobile |  |
+| https://www.notion.com/ | custom | saas-marketing | TW❗ | TW | 49 | 85 | component-lib-spacing |  |
+| https://www.figma.com/ | custom | saas-marketing | — | — | ERR | ERR | — | SKIP |
+| https://slack.com/ | custom | saas-marketing | non-TW | non-TW | 1 | 46 | tap-target-mobile |  |
+| https://developer.mozilla.org/en-US/ | custom | docs | non-TW | non-TW | 0 | 55 | tap-target-mobile |  |
+| https://react.dev/ | custom | docs | TW❗ | TW | 30 | 84 | tap-target-mobile |  |
+| https://news.ycombinator.com/ | plain-css | messy-minimal | non-TW | non-TW | 0 | 92 | tap-target-mobile |  |
+| https://www.gov.uk/ | plain-css | gov | non-TW | non-TW | 6 | 84 | tap-target-mobile |  |
+| https://www.usa.gov/ | plain-css | gov | non-TW | non-TW | 20 | 25 | non-canonical-real-icon |  |
+| https://www.mit.edu/ | plain-css | edu | non-TW | non-TW | 0 | 39 | tap-target-mobile |  |
+| https://european-union.europa.eu/index_en | plain-css | gov | non-TW | non-TW | 0 | 19 | tap-target-mobile |  |
+| https://getbootstrap.com/docs/5.3/examples/pricing/ | bootstrap | bootstrap-example | non-TW | non-TW | 0 | 20 | tap-target-mobile |  |
+| https://getbootstrap.com/docs/5.3/examples/carousel/ | bootstrap | bootstrap-example | non-TW | non-TW | 0 | 10 | tap-target-mobile |  |
+| https://pro.ant.design/ | antd | antd | TW❗ | TW | 21 | 39 | tap-target-mobile |  |
+| https://mui.com/material-ui/getting-started/ | mui | css-in-js | non-TW | non-TW | 1 | 24 | tap-target-mobile |  |
+| https://www.chakra-ui.com/docs/get-started/installation | chakra | css-in-js | non-TW | non-TW | 0 | 23 | tap-target-mobile |  |
+| https://mantine.dev/ | mantine | css-in-js | non-TW | non-TW | 31 | 153 | tap-target-mobile |  |
+| https://bulma.io/ | bulma | css-framework | non-TW | non-TW | 12 | 167 | tap-target-mobile |  |
+| https://semantic-ui.com/ | semantic | css-framework | TW❗ | TW | 181 | 107 | component-lib-spacing |  |
+| https://www.w3.org/ | plain-css | standards | non-TW | non-TW | 0 | 4 | tap-target-mobile |  |
