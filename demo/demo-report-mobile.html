@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gridproof — 8 findings</title>
+<style>
+:root {
+  --bg:#0b0e13; --panel:#12161d; --line:#20262f; --line-soft:rgba(32,38,47,0.6);
+  --text:#e6edf3; --muted:#8b949e; --faint:#5c6470;
+  --error:#f85149; --warn:#d99a2b; --info:#589dff; --ok:#3fb950;
+  --grid:rgba(255,255,255,0.022);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+.wrap { max-width:960px; margin:0 auto; padding:0 28px 72px; }
+
+.header { position:relative; margin:0 -28px 30px; padding:26px 28px 22px; border-bottom:1px solid var(--line); overflow:hidden;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:26px 26px; }
+.brandline { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; }
+.logo { font-family:var(--mono); font-weight:600; font-size:13px; letter-spacing:0.01em; color:var(--muted); }
+.logo b { color:var(--text); }
+.stamp { font-family:var(--mono); font-size:11px; color:var(--faint); }
+
+/* Hero verdict — the single focal point */
+.hero { display:flex; align-items:center; gap:20px; }
+.big { font-family:var(--mono); font-size:64px; font-weight:700; line-height:0.9; letter-spacing:-0.03em; }
+.big.error { color:var(--error); } .big.warn { color:var(--warn); } .big.info { color:var(--info); } .big.ok { color:var(--ok); }
+.headline { font-size:17px; font-weight:600; letter-spacing:-0.01em; }
+.headline.error { color:var(--error); } .headline.warn { color:var(--warn); } .headline.info { color:var(--info); } .headline.ok { color:var(--ok); }
+.legend { margin-top:5px; font-size:12px; color:var(--muted); display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.legend .lg { display:inline-flex; align-items:center; gap:5px; }
+.legend .lg i { width:7px; height:7px; border-radius:50%; display:inline-block; }
+.legend .error i { background:var(--error); } .legend .warn i { background:var(--warn); } .legend .info i { background:var(--info); }
+.legend .sep { color:var(--faint); }
+.legend.clean { color:var(--faint); }
+
+.bar { display:flex; height:3px; border-radius:3px; overflow:hidden; margin:16px 0 16px; background:var(--panel); }
+.bar .seg.error { background:var(--error); } .bar .seg.warn { background:var(--warn); } .bar .seg.info { background:var(--info); }
+.bar-clean { background:linear-gradient(90deg, rgba(63,185,80,0.55), rgba(63,185,80,0.15)); }
+
+.byrule { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 12px; }
+.chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--line); border-radius:5px; font-size:11.5px; }
+.chip code { font-family:var(--mono); color:var(--muted); } .chip b { font-family:var(--mono); color:var(--text); }
+
+.context { font-family:var(--mono); font-size:11.5px; color:var(--faint); }
+.context .u { color:var(--muted); } .context .ok { color:var(--ok); }
+.gate { margin-top:12px; display:inline-block; padding:4px 10px; border-radius:5px; font-size:11.5px; font-weight:600;
+  color:var(--info); background:rgba(88,157,255,0.08); border:1px solid rgba(88,157,255,0.28); }
+
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead th { text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--faint); font-weight:600; padding:0 12px 9px; }
+tbody td { padding:13px 12px; border-top:1px solid var(--line-soft); vertical-align:top; }
+tbody tr:first-child td { border-top:1px solid var(--line); }
+tbody tr:hover { background:rgba(255,255,255,0.015); }
+.c-sev { width:62px; } .c-issue { width:26%; } .c-fix { width:24%; }
+
+.tag { display:inline-block; padding:1px 7px; border-radius:4px; font-family:var(--mono); font-size:10.5px; font-weight:600; }
+.tag-error { color:var(--error); background:rgba(248,81,73,0.10); } .tag-warn { color:var(--warn); background:rgba(217,154,43,0.10); } .tag-info { color:var(--info); background:rgba(88,157,255,0.08); }
+.sel { font-family:var(--mono); font-size:11.5px; color:var(--muted); word-break:break-all; }
+.rule { display:block; font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:3px; }
+.c-issue { color:var(--text); }
+.c-fix { font-family:var(--mono); font-size:12px; color:var(--muted); }
+.c-fix .from { color:var(--error); } .c-fix .to { color:var(--ok); } .c-fix .arrow { color:var(--faint); }
+.c-aff { color:var(--faint); font-size:12px; line-height:1.9; }
+.c-aff .count { font-family:var(--mono); font-weight:700; color:var(--text); margin-right:6px; }
+.wcag { color:var(--info); } .muted { color:var(--faint); }
+tr.sev-info td { opacity:0.6; }
+tr.empty td { text-align:center; color:var(--faint); padding:30px 12px; }
+tr.more td, tr.grouped td { text-align:center; color:var(--faint); font-size:11.5px; padding:12px; }
+tr.grouped td { border-top:1px solid var(--line); }
+
+.footer { margin-top:28px; padding-top:14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:var(--faint); font-size:11.5px; font-family:var(--mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="brandline">
+      <span class="logo">grid<b>proof</b></span>
+      <span class="stamp">2026-08-13 17:36</span>
+    </div>
+    <div class="hero">
+      <div class="big error">8</div>
+      <div class="hero-text">
+        <div class="headline error">8 findings</div>
+        <div class="legend"><span class="lg error"><i></i>1 error</span><span class="sep">&middot;</span><span class="lg warn"><i></i>7 warnings</span></div>
+      </div>
+    </div>
+    <div class="bar"><div class="seg error" style="flex:1"></div><div class="seg warn" style="flex:7"></div></div>
+    <div class="byrule"><span class="chip"><code>spacing-scale</code><b>3</b></span><span class="chip"><code>arbitrary-value</code><b>2</b></span><span class="chip"><code>gap-consistency</code><b>1</b></span><span class="chip"><code>canonical-size</code><b>2</b></span></div>
+    <div class="context">
+      <span class="u">http://127.0.0.1:8642/demo-page.html</span>
+      &middot; 375&times;812
+      &middot; Tailwind <span class="ok">&#10003;</span>
+      &middot; base 4px &middot; 54 elements
+    </div>
+    
+  </div>
+
+  <table>
+    <thead><tr><th>Severity</th><th>Issue</th><th>Suggested fix</th><th>Affected</th></tr></thead>
+    <tbody>
+      <tr class="sev-error">
+        <td class="c-sev"><span class="tag tag-error">error</span></td>
+        <td class="c-issue">tap target 32px, below 44px<span class="rule">canonical-size</span></td>
+        <td class="c-fix">enlarge to &ge;44px <span class="wcag">WCAG 2.5.8</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">#settings-btn</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">icon 37px, off canonical<span class="rule">canonical-size</span></td>
+        <td class="c-fix">snap to <span class="to">40px</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">#bell-icon</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">13px off-scale<span class="rule">spacing-scale</span></td>
+        <td class="c-fix"><span class="from">py-[13px]</span> <span class="arrow">&rarr;</span> <span class="to">py-3</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">#new-project-btn</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">py-[13px] off-scale (13px)<span class="rule">arbitrary-value</span></td>
+        <td class="c-fix"><span class="from">py-[13px]</span> <span class="arrow">&rarr;</span> <span class="to">py-3</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">#new-project-btn</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">13px off-scale<span class="rule">spacing-scale</span></td>
+        <td class="c-fix">padding-top: <span class="to">12px</span> <span class="muted">(inline)</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">#stat-revenue</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">15px off-scale<span class="rule">spacing-scale</span></td>
+        <td class="c-fix"><span class="from">px-[15px]</span> <span class="arrow">&rarr;</span> <span class="to">px-3.5</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">span.px-\[15px\].py-0\.5.rounded-full.bg-emerald-50.text-emerald-600.text-xs.font-medium</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">px-[15px] off-scale (15px)<span class="rule">arbitrary-value</span></td>
+        <td class="c-fix"><span class="from">px-[15px]</span> <span class="arrow">&rarr;</span> <span class="to">px-3.5</span></td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">span.px-\[15px\].py-0\.5.rounded-full.bg-emerald-50.text-emerald-600.text-xs.font-medium</code></td>
+      </tr>
+<tr class="sev-warn">
+        <td class="c-sev"><span class="tag tag-warn">warn</span></td>
+        <td class="c-issue">ragged sibling gaps (12px, 20px, 16px)<span class="rule">gap-consistency</span></td>
+        <td class="c-fix">set <span class="to">gap-4</span> on container</td>
+        <td class="c-aff"><span class="count">&times;1</span> <code class="sel">#activity-list</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>Gridproof v0.1.0 &middot; suggest, don't forbid</span>
+    <span></span>
+  </div>
+</div>
+</body>
+</html>
