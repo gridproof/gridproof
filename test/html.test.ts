@@ -100,26 +100,26 @@ describe("renderHtml — findings report", () => {
     expect(html).not.toContain("cdn");
   });
 
-  it("shows the score numbers and the health bar segments", () => {
-    // three colored score numbers
-    expect(html).toMatch(/score-cell error[\s\S]*?>1</);
-    expect(html).toContain("errors");
-    expect(html).toContain("warnings");
-    // proportional health bar with all three severities
+  it("leads with one focal verdict (total) + a quiet severity legend", () => {
+    // hero: big total number colored by worst severity (error present → red)
+    expect(html).toMatch(/class="big error">5</);
+    expect(html).toContain("5 findings");
+    // quiet inline legend, not three competing big numbers
+    expect(html).toContain("1 error");
+    expect(html).toContain("1 warning");
+    expect(html).toContain("1 info");
+    // proportional bar with all three severities
     expect(html).toContain('class="seg error"');
     expect(html).toContain('class="seg warn"');
     expect(html).toContain('class="seg info"');
   });
 
-  it("renders the byRule strip for all four rules", () => {
-    for (const id of [
-      "spacing-scale",
-      "arbitrary-value",
-      "gap-consistency",
-      "canonical-size",
-    ]) {
-      expect(html).toContain(id);
-    }
+  it("byRule strip shows only rules with findings (no zero noise)", () => {
+    expect(html).toContain("spacing-scale");
+    expect(html).toContain("arbitrary-value");
+    expect(html).toContain("canonical-size");
+    // gap-consistency has 0 findings here → not shown as a chip
+    expect(html).not.toContain("<code>gap-consistency</code>");
   });
 
   it("renders each violation's selector, issue, and fix", () => {
@@ -134,8 +134,8 @@ describe("renderHtml — findings report", () => {
   });
 
   it("shows the truncation row and the suppressed footer", () => {
-    expect(html).toMatch(/truncated to 3 of 5/);
-    expect(html).toContain("2 more");
+    expect(html).toContain("+2 more");
+    expect(html).toContain("see all 5");
     expect(html).toContain("2 suppressed");
   });
 
@@ -170,6 +170,71 @@ describe("renderHtml — findings report", () => {
     );
     expect(injected).toContain("&lt;b&gt;oops&lt;/b&gt;");
     expect(injected).not.toContain("<b>oops</b>");
+  });
+});
+
+describe("renderHtml — grouping (efficient at scale)", () => {
+  it("collapses identical findings into one group with a count + affected selectors", () => {
+    const vs: Violation[] = Array.from({ length: 40 }, (_, i) =>
+      mkViolation({
+        ruleId: "spacing-scale",
+        severity: "warn",
+        selector: `#lib-${i}`,
+        actual: "9px",
+        expected: "8px",
+        fixHint: { kind: "manual", note: "trace padding:9px" },
+      }),
+    );
+    const html = renderHtml(
+      mkReport({
+        violations: vs,
+        summary: {
+          total: 40,
+          byRule: { "spacing-scale": 40 },
+          errors: 0,
+          warns: 40,
+          infos: 0,
+        },
+      }),
+      META,
+    );
+    // one group, not 40 rows
+    expect(html).toContain("&times;40");
+    expect(html).toContain("+36 more"); // 40 − 4 shown
+    expect(html).toContain("grouped into 1 fix");
+    // exactly one issue row for the group (count the severity tag occurrences)
+    expect((html.match(/tag tag-warn/g) ?? []).length).toBe(1);
+  });
+
+  it("keeps distinct fixes as separate groups, worst severity first", () => {
+    const html = renderHtml(
+      mkReport({
+        violations: [
+          mkViolation({ severity: "warn", selector: "#a", actual: "9px", expected: "8px" }),
+          mkViolation({ severity: "warn", selector: "#b", actual: "9px", expected: "8px" }),
+          mkViolation({
+            ruleId: "canonical-size",
+            severity: "error",
+            selector: "#btn",
+            actual: "32px",
+            expected: "44px",
+            fixHint: { kind: "manual", note: "below the 44px minimum tap size (WCAG 2.5.8)" },
+          }),
+        ],
+        summary: {
+          total: 3,
+          byRule: { "spacing-scale": 2, "canonical-size": 1 },
+          errors: 1,
+          warns: 2,
+          infos: 0,
+        },
+      }),
+      META,
+    );
+    // 2 groups: the 9px pair (×2) and the tap error (×1); error sorts first
+    expect(html.indexOf("tag-error")).toBeLessThan(html.indexOf("tag-warn"));
+    expect(html).toContain("&times;2");
+    expect(html).toContain("grouped into 2 fix");
   });
 });
 
