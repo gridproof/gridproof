@@ -1,14 +1,17 @@
+import { TAILWIND_SPACING_SCALE_PX } from "../../config/defaults.js";
 import type { CollectedComputed, CollectedElement } from "../collector.js";
 import { sourceHint } from "../../report/source-hint.js";
 import type { Violation } from "../../report/schema.js";
-import { isOnGrid, nearestMultiple } from "../../util/nearest.js";
+import { isNearAny, isOnGrid, nearestMultiple } from "../../util/nearest.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
- * spacing-scale (spec §7.3). For each computed margin/padding/gap px value
- * v > 0: valid iff it is within 0.6px of a multiple of `baseUnit`, OR within
- * 0.6px of a value in `allowedValues` (default [1, 2]). Only concrete px values
- * are judged — 0, `auto`, `%`, and viewport units never parse and are ignored.
+ * spacing-scale (spec §7.3, v1.2). For each computed margin/padding/gap px value
+ * v > 0: valid iff within 0.6px of a multiple of `baseUnit`, OR on the standard
+ * Tailwind spacing scale (so half-steps 6/10/14px pass), OR within 0.6px of a
+ * value in `allowedValues` (default [1, 2]). Only concrete px values are judged
+ * — 0, `auto`, `%`, and viewport units never parse. Auto-centering horizontal
+ * margins (mx-auto) are ignored (spec §7.2 "ignore auto").
  *
  * Side-collapse (§12 noise reduction): when ≥2 sides of the same box's
  * padding/margin group share the same off-scale value, emit ONE violation with
@@ -55,9 +58,11 @@ export const spacingScaleRule: Rule = {
     const violations: Violation[] = [];
 
     const offends = (v: number): boolean => {
-      const onGrid = isOnGrid(v, baseUnit, TOLERANCE);
-      const allowed = allowedValues.some((a) => Math.abs(v - a) < TOLERANCE);
-      return !onGrid && !allowed;
+      const valid =
+        isOnGrid(v, baseUnit, TOLERANCE) ||
+        isNearAny(v, TAILWIND_SPACING_SCALE_PX, TOLERANCE) ||
+        isNearAny(v, allowedValues, TOLERANCE);
+      return !valid;
     };
 
     const push = (
@@ -84,10 +89,12 @@ export const spacingScaleRule: Rule = {
       el: CollectedElement,
       sides: ReadonlyArray<readonly [keyof CollectedComputed, string]>,
       shorthand: string,
+      skipKeys?: ReadonlySet<keyof CollectedComputed>,
     ): void => {
       // Group offending sides by their (string) value, preserving side order.
       const byValue = new Map<number, string[]>();
       for (const [key, label] of sides) {
+        if (skipKeys?.has(key)) continue;
         const v = parseConcretePx(el.computed[key]);
         if (v === null || !offends(v)) continue;
         const list = byValue.get(v);
@@ -103,9 +110,19 @@ export const spacingScaleRule: Rule = {
       }
     };
 
+    const CENTERING_SIDES: ReadonlySet<keyof CollectedComputed> = new Set([
+      "marginLeft",
+      "marginRight",
+    ]);
+
     for (const el of ctx.elements) {
       judgeGroup(el, PADDING_SIDES, "padding");
-      judgeGroup(el, MARGIN_SIDES, "margin");
+      judgeGroup(
+        el,
+        MARGIN_SIDES,
+        "margin",
+        el.autoMarginX ? CENTERING_SIDES : undefined,
+      );
       for (const [key, label] of GAP_PROPS) {
         const v = parseConcretePx(el.computed[key]);
         if (v !== null && offends(v)) push(el, label, v);

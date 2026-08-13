@@ -4,20 +4,29 @@ import {
   TAILWIND_SPACING_SCALE_PX,
 } from "../../config/defaults.js";
 import type { Violation } from "../../report/schema.js";
-import { nearestInScale } from "../../util/nearest.js";
+import { isNearAny, isOnGrid, nearestInScale, nearestMultiple } from "../../util/nearest.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
- * arbitrary-value (spec §7.3). Reads `classList` (NOT computed geometry) for
- * Tailwind arbitrary spacing/size classes like `p-[13px]`, `w-[347px]`,
- * `gap-[7px]`, converts rem→px (×16), and:
- *  - off-scale → `tailwind-class` fix to the nearest standard class
- *  - on-scale (e.g. `p-[16px]`) → hygiene `warn` to the named class (`p-4`)
+ * arbitrary-value (spec §7.3, v1.2 — conservative). Reads `classList` for
+ * Tailwind arbitrary classes, rem→px (×16), and flags only genuine drift:
+ *  - SPACING props (m/p/gap/space/inset/top/right/bottom/left): off-grid AND
+ *    off-scale → warn with the nearest Tailwind class; on a named step →
+ *    quiet hygiene rename (same value); on-grid but unnamed → nothing.
+ *  - SIZE props (w, h, size, min-w/max-w, min-h/max-h): a concrete dimension
+ *    is deliberate. Only flag when off the baseUnit grid, and then only as an
+ *    "off-grid dimension" note with NO size-changing class suggestion.
+ *  - border-radius (`rounded-*`) is OUT of scope (not a spacing scale).
+ * Never emits a fixHint.to that isn't a real Tailwind class.
  */
 
-/** Exact regex from spec §7.3. Groups: 1=prefix, 2=number, 3=unit. */
+/** Groups: 1=prefix, 2=number, 3=unit. Note: `rounded` intentionally excluded (v1.2). */
 export const ARBITRARY_CLASS_RE =
-  /(?:^|:)(-?(?:[mp][trblxy]?|gap|space-[xy]|w|h|size|inset|top|right|bottom|left|rounded(?:-[a-z]+)?))-\[(\d+(?:\.\d+)?)(px|rem)\]/;
+  /(?:^|:)(-?(?:min-[wh]|max-[wh]|[mp][trblxy]?|gap|space-[xy]|w|h|size|inset|top|right|bottom|left))-\[(\d+(?:\.\d+)?)(px|rem)\]/;
+
+const SPACING_PREFIX_RE =
+  /^-?(?:[mp][trblxy]?|gap|space-[xy]|inset|top|right|bottom|left)$/;
+const SIZE_PREFIX_RE = /^(?:min-[wh]|max-[wh]|w|h|size)$/;
 
 export interface ArbitraryMatch {
   /** The whole class token, e.g. `md:p-[13px]`. */
@@ -77,15 +86,22 @@ function prefixToProperty(prefix: string): string {
   if (p === "size") return "size";
   if (p === "gap") return "gap";
   if (p.startsWith("space-")) return "gap";
-  if (p.startsWith("rounded")) return "border-radius";
+  if (p.startsWith("min-")) return p === "min-w" ? "min-width" : "min-height";
+  if (p.startsWith("max-")) return p === "max-w" ? "max-width" : "max-height";
   if (["inset", "top", "right", "bottom", "left"].includes(p)) return p;
   return p;
+}
+
+/** True only for real Tailwind spacing class keys (guards fixHint.to). */
+function isKnownTailwindKey(key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(TAILWIND_SPACING_PX, key);
 }
 
 export const arbitraryValueRule: Rule = {
   id: "arbitrary-value",
   check(ctx: RuleContext): Violation[] {
     const severity = ctx.config.rules["arbitrary-value"] ?? "warn";
+    const baseUnit = ctx.config.baseUnit;
     const scale = TAILWIND_SPACING_SCALE_PX;
     const violations: Violation[] = [];
 
@@ -94,47 +110,81 @@ export const arbitraryValueRule: Rule = {
         const match = parseArbitraryClass(token);
         if (match === null) continue;
 
-        const property = prefixToProperty(match.prefix);
-        const onScale = scale.includes(match.px);
+        const prefix = match.prefix;
+        const property = prefixToProperty(prefix);
+        const px = match.px;
 
-        if (onScale) {
-          // Style hygiene: value is fine, but a named class is preferred.
-          const key = PX_TO_TAILWIND_KEY.get(match.px);
-          if (key === undefined) continue;
-          violations.push({
-            ruleId: "arbitrary-value",
-            severity: "warn",
-            selector: el.selector,
-            property,
-            actual: pxStr(match.px),
-            expected: pxStr(match.px),
-            fixHint: {
-              kind: "tailwind-class",
-              from: token,
-              to: `${match.prefix}-${key}`,
-              note: "arbitrary value is on-scale; use the named Tailwind class",
-            },
-            snippet: el.snippet,
-          });
-        } else {
-          const nearestPx = nearestInScale(match.px, scale);
-          const key = PX_TO_TAILWIND_KEY.get(nearestPx);
-          if (key === undefined) continue;
+        if (SIZE_PREFIX_RE.test(prefix)) {
+          // SIZE: a concrete dimension is deliberate. Only flag off-grid, and
+          // never suggest a class that would change the rendered size.
+          if (isOnGrid(px, baseUnit)) continue;
           violations.push({
             ruleId: "arbitrary-value",
             severity,
             selector: el.selector,
             property,
-            actual: pxStr(match.px),
+            actual: pxStr(px),
+            expected: `${pxStr(nearestMultiple(px, baseUnit))} (grid)`,
+            fixHint: {
+              kind: "manual",
+              from: token,
+              note: `off-grid dimension ${pxStr(px)}; align to the ${baseUnit}px grid (keep it arbitrary — no named class matches this size)`,
+            },
+            snippet: el.snippet,
+          });
+          continue;
+        }
+
+        if (!SPACING_PREFIX_RE.test(prefix)) continue; // e.g. rounded → skip
+
+        // SPACING
+        const onGrid = isOnGrid(px, baseUnit);
+        const onScale = isNearAny(px, scale);
+
+        if (!onGrid && !onScale) {
+          // Genuine off-grid, off-scale drift → suggest nearest named class.
+          const nearestPx = nearestInScale(px, scale);
+          const key = PX_TO_TAILWIND_KEY.get(nearestPx);
+          const valid = key !== undefined && isKnownTailwindKey(key);
+          violations.push({
+            ruleId: "arbitrary-value",
+            severity,
+            selector: el.selector,
+            property,
+            actual: pxStr(px),
             expected: pxStr(nearestPx),
+            fixHint: valid
+              ? { kind: "tailwind-class", from: token, to: `${prefix}-${key}` }
+              : {
+                  kind: "manual",
+                  from: token,
+                  note: `off-scale spacing ${pxStr(px)}; nearest scale value ${pxStr(nearestPx)}`,
+                },
+            snippet: el.snippet,
+          });
+          continue;
+        }
+
+        // On a named step → quiet hygiene rename (same value, no size change).
+        const selfKey = PX_TO_TAILWIND_KEY.get(px);
+        if (selfKey !== undefined && isKnownTailwindKey(selfKey)) {
+          violations.push({
+            ruleId: "arbitrary-value",
+            severity: "warn",
+            selector: el.selector,
+            property,
+            actual: pxStr(px),
+            expected: pxStr(px),
             fixHint: {
               kind: "tailwind-class",
               from: token,
-              to: `${match.prefix}-${key}`,
+              to: `${prefix}-${selfKey}`,
+              note: "arbitrary value is on-scale; use the named Tailwind class",
             },
             snippet: el.snippet,
           });
         }
+        // on-grid but not a named step (e.g. p-[60px]) → no finding.
       }
     }
 

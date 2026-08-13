@@ -63,10 +63,12 @@ export interface CollectedElement {
    * (self + ancestors) merged with matching config selector entries.
    */
   ignore: IgnoreSpec;
-  /** Matches `button, a[href], input, [role=button]` (canonical-size targets). */
-  isInteractive: boolean;
-  /** svg, img inside a button/link, or class matching /icon/i (canonical-size). */
+  /** A pointer tap target (button/[role=button]/input[button,submit]/non-inline a[href]). */
+  isTapTarget: boolean;
+  /** A small icon (svg/img ≤48px box or .icon); excludes decorative/hero graphics. */
   isIcon: boolean;
+  /** Horizontal margins are auto-centering (mx-auto); spacing-scale ignores them. */
+  autoMarginX: boolean;
   /** Raw inline `style` attribute value if present (source-hint branch 3). */
   styleAttr: string | null;
   /** outerHTML head of the element, truncated to 120 chars (§6 snippet). */
@@ -213,19 +215,59 @@ export async function collectGeometry(
         return null;
       };
 
-      const isInteractiveEl = (el: Element): boolean => {
+      /**
+       * A tap target for canonical-size (v1.2): button, [role=button],
+       * input[type=button|submit], or a[href] that is NOT an inline link within
+       * text flow (those are WCAG 2.5.8 exempt).
+       */
+      const isTapTargetEl = (el: Element): boolean => {
+        const tag = el.tagName.toLowerCase();
+        if (tag === "button") return true;
         try {
-          return el.matches('button, a[href], input, [role="button"]');
+          if (el.matches('[role="button"]')) return true;
         } catch {
-          return false;
+          /* ignore */
         }
+        if (tag === "input") {
+          const t = (el.getAttribute("type") ?? "").toLowerCase();
+          return t === "button" || t === "submit";
+        }
+        if (tag === "a" && el.hasAttribute("href")) {
+          if (getComputedStyle(el).display === "inline") {
+            const parent = el.parentElement;
+            if (parent) {
+              for (const n of Array.from(parent.childNodes)) {
+                if (
+                  n.nodeType === 3 &&
+                  (n.textContent ?? "").trim() !== ""
+                ) {
+                  return false; // inline link inside a text block → exempt
+                }
+              }
+            }
+          }
+          return true;
+        }
+        return false;
       };
 
-      const isIconEl = (el: Element): boolean => {
+      /**
+       * An icon for canonical-size (v1.2, spec §7.3): a class /icon/i element;
+       * an svg with an icon-sized box (≤48px) or inside a button/link; or an img
+       * ONLY when inside a button/link. Standalone imgs (logos, media) and
+       * large/hero SVGs (≥64px) are NOT icons.
+       */
+      const isIconEl = (el: Element, maxDim: number): boolean => {
+        if (Array.from(el.classList).some((c) => /icon/i.test(c))) return true;
         const tag = el.tagName.toLowerCase();
-        if (tag === "svg") return true;
-        if (tag === "img" && el.closest("button, a[href]") !== null) return true;
-        return Array.from(el.classList).some((c) => /icon/i.test(c));
+        if (tag !== "svg" && tag !== "img") return false;
+        if (maxDim >= 64) return false; // decorative / illustration / logo / badge
+        const inInteractive = el.closest("button, a[href]") !== null;
+        // img is an icon only when small AND inside a button/link; a small svg
+        // qualifies standalone.
+        if (tag === "img") return inInteractive && maxDim > 0;
+        const small = maxDim > 0 && maxDim <= 48;
+        return inInteractive || small;
       };
 
       const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "HEAD", "META", "LINK", "TITLE"]);
@@ -271,6 +313,33 @@ export async function collectGeometry(
             siblingIndex = Array.from(parent.children).indexOf(el);
           }
 
+          // Auto-centering horizontal margins (mx-auto) resolve to px; treat as
+          // layout, not authored spacing (spec §7.2 "ignore auto").
+          let autoMarginX = false;
+          {
+            const disp = cs.display;
+            const blockish =
+              disp === "block" ||
+              disp.startsWith("flex") ||
+              disp.startsWith("grid") ||
+              disp === "table" ||
+              disp === "list-item";
+            const ml = Number.parseFloat(cs.marginLeft) || 0;
+            const mr = Number.parseFloat(cs.marginRight) || 0;
+            if (blockish && parent !== null && ml > 0.5 && Math.abs(ml - mr) < 0.6) {
+              const pcs = getComputedStyle(parent);
+              const parentContent =
+                parent.clientWidth -
+                (Number.parseFloat(pcs.paddingLeft) || 0) -
+                (Number.parseFloat(pcs.paddingRight) || 0);
+              if (Math.abs(ml + mr + rectRaw.width - parentContent) < 1.5) {
+                autoMarginX = true;
+              }
+            }
+          }
+
+          const maxDim = Math.max(rectRaw.width, rectRaw.height);
+
           elements.push({
             selector: buildSelector(el),
             tagName: el.tagName.toLowerCase(),
@@ -308,8 +377,9 @@ export async function collectGeometry(
             ariaHidden: el.getAttribute("aria-hidden") === "true",
             gpIgnore: el.getAttribute("data-gp-ignore"),
             ignore: computeIgnore(el),
-            isInteractive: isInteractiveEl(el),
-            isIcon: isIconEl(el),
+            isTapTarget: isTapTargetEl(el),
+            isIcon: isIconEl(el, maxDim),
+            autoMarginX,
             styleAttr: el.getAttribute("style"),
             snippet: (() => {
               const oh = el.outerHTML;

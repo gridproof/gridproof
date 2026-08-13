@@ -60,7 +60,7 @@ export const canonicalSizeRule: Rule = {
       }
 
       // Interactive — tap target must meet the minimum.
-      if (el.isInteractive && w > 0 && h > 0) {
+      if (el.isTapTarget && w > 0 && h > 0) {
         const min = Math.min(w, h);
         if (min < minTapTarget) {
           const property = w <= h ? "width" : "height";

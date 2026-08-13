@@ -7,7 +7,9 @@ import type { GridproofConfig } from "./schema.js";
 export const DEFAULT_CONFIG: GridproofConfig = {
   baseUnit: 4,
   allowedValues: [1, 2],
-  canonicalSizes: [16, 20, 24, 32, 40, 48],
+  // Includes 12 & 14 for lucide/small icons (v1.2 calibration: 14px icons are
+  // legitimate, not drift).
+  canonicalSizes: [12, 14, 16, 20, 24, 32, 40, 48],
   minTapTarget: 44,
   rules: {
     "spacing-scale": "warn",

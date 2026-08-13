@@ -201,4 +201,18 @@ describe("integration: canonical-size (canonical.html)", () => {
       report.violations.some((v) => v.selector === "#icon-ok"),
     ).toBe(false);
   });
+
+  it("does NOT flag an inline text link as a tap target (WCAG 2.5.8 exempt)", async () => {
+    const report = await auditFixture("canonical.html");
+    expect(
+      report.violations.some((v) => v.selector === "#link-inline"),
+    ).toBe(false);
+  });
+
+  it("does NOT flag a 14px icon (now canonical, v1.2)", async () => {
+    const report = await auditFixture("canonical.html");
+    expect(
+      report.violations.some((v) => v.selector === "#icon-14"),
+    ).toBe(false);
+  });
 });

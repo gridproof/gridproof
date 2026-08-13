@@ -45,8 +45,9 @@ export interface MakeElementOptions {
   parentSelector?: string | null;
   siblingIndex?: number;
   ignore?: IgnoreSpec;
-  isInteractive?: boolean;
+  isTapTarget?: boolean;
   isIcon?: boolean;
+  autoMarginX?: boolean;
   styleAttr?: string | null;
 }
 
@@ -64,8 +65,9 @@ export function makeElement(o: MakeElementOptions = {}): CollectedElement {
     ariaHidden: false,
     gpIgnore: null,
     ignore: o.ignore ?? null,
-    isInteractive: o.isInteractive ?? false,
+    isTapTarget: o.isTapTarget ?? false,
     isIcon: o.isIcon ?? false,
+    autoMarginX: o.autoMarginX ?? false,
     styleAttr: o.styleAttr ?? null,
     snippet: `<${o.tagName ?? "div"}>`,
   };

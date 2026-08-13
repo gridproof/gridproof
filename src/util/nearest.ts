@@ -50,3 +50,12 @@ export function isOnGrid(value: number, base: number, tolerance = 0.6): boolean 
   const m = nearestMultiple(value, base);
   return Math.abs(value - m) < tolerance;
 }
+
+/** True when `value` is within `tolerance` px of any entry in `values`. */
+export function isNearAny(
+  value: number,
+  values: readonly number[],
+  tolerance = 0.6,
+): boolean {
+  return values.some((v) => Math.abs(value - v) < tolerance);
+}

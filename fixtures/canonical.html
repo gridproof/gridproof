@@ -71,5 +71,23 @@
         <rect width="24" height="24" fill="#9c9" />
       </svg>
     </div>
+
+    <!-- OK: inline text link (~20px tall) is WCAG 2.5.8 exempt → NOT a tap target. -->
+    <p id="prose" style="margin-top: 24px">
+      See the <a id="link-inline" href="/docs">documentation</a> for details.
+    </p>
+
+    <!-- OK: 14px icon is now canonical (v1.2). -->
+    <svg
+      id="icon-14"
+      data-testid="icon-14"
+      class="icon"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      style="margin-top: 24px"
+    >
+      <rect width="14" height="14" fill="#9c9" />
+    </svg>
   </body>
 </html>

@@ -69,6 +69,42 @@ describe("spacing-scale side-collapse", () => {
 });
 
 describe("spacing-scale core", () => {
+  // v1.2: Tailwind half-steps (1.5/2.5/3.5 = 6/10/14px) are valid, not drift.
+  it("passes Tailwind half-steps 6/10/14px (py-1.5 etc.)", () => {
+    expect(
+      run(
+        makeElement({
+          computed: {
+            paddingTop: "6px",
+            paddingBottom: "6px",
+            marginTop: "10px",
+            rowGap: "14px",
+          },
+        }),
+      ),
+    ).toHaveLength(0);
+  });
+
+  // v1.2: auto-centering horizontal margins (mx-auto) are layout, not spacing.
+  it("ignores auto-centering left/right margins when autoMarginX is set", () => {
+    expect(
+      run(
+        makeElement({
+          computed: { marginLeft: "290px", marginRight: "290px" },
+          autoMarginX: true,
+        }),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("still flags a genuine off-scale margin when NOT auto-centering", () => {
+    const v = run(
+      makeElement({ computed: { marginLeft: "290px", marginRight: "290px" } }),
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.property).toBe("margin");
+  });
+
   it("passes rem-rounded 15.68px (0.6px tolerance)", () => {
     expect(
       run(makeElement({ computed: { paddingTop: "15.68px" } })),

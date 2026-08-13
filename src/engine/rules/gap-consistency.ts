@@ -3,18 +3,27 @@ import {
   TAILWIND_SPACING_SCALE_PX,
 } from "../../config/defaults.js";
 import type { Violation } from "../../report/schema.js";
-import { nearestInScale } from "../../util/nearest.js";
+import { isNearAny, isOnGrid, nearestInScale } from "../../util/nearest.js";
 import type { CollectedElement } from "../collector.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
- * gap-consistency (spec §7.3). For each flex/grid container with ≥3 children on
- * one axis and NO computed `gap`, compute inter-sibling distances from rects. If
- * they differ by more than tolerance AND the spread exceeds `baseUnit`, emit ONE
- * container-level violation (never per-child) suggesting a unified `gap`.
+ * gap-consistency (spec §7.3, v1.2 — conservative). For a flex/grid LAYOUT
+ * container (≥3 non-text children, no positive gap), compute inter-sibling
+ * distances from rects and emit ONE container-level violation if the spread
+ * exceeds `baseUnit`. Skips content stacks (text-majority children),
+ * absolutely-positioned overlays, and lists whose gaps are already valid
+ * Tailwind steps — those are intentional rhythm, not drift.
  */
 
 const TOLERANCE = 0.6;
+
+/** Inline / text-level tags: a container of these is a content stack, not a layout list. */
+const TEXT_TAGS = new Set([
+  "h1", "h2", "h3", "h4", "h5", "h6",
+  "p", "span", "a", "small", "label", "strong", "em", "b", "i", "code",
+  "figcaption", "blockquote", "time", "abbr",
+]);
 
 function parsePx(value: string): number | null {
   const m = /^(-?\d+(?:\.\d+)?)px$/.exec(value.trim());
@@ -55,8 +64,19 @@ export const gapConsistencyRule: Rule = {
       if (!/flex|grid/.test(display)) continue;
       if (hasPositiveGap(container)) continue;
 
-      const children = childrenByParent.get(container.selector);
-      if (children === undefined || children.length < 3) continue;
+      const rawChildren = childrenByParent.get(container.selector);
+      if (rawChildren === undefined) continue;
+
+      // Exclude absolutely-positioned overlays (decorative layers skew distances).
+      const children = rawChildren.filter(
+        (c) => c.computed.position !== "absolute" && c.computed.position !== "fixed",
+      );
+      if (children.length < 3) continue;
+
+      // Skip content stacks: a majority of text-level children is a typographic
+      // rhythm (heading/body/CTA), not a layout list.
+      const textCount = children.filter((c) => TEXT_TAGS.has(c.tagName)).length;
+      if (textCount * 2 >= children.length) continue;
 
       const ordered = [...children].sort(
         (a, b) => a.siblingIndex - b.siblingIndex,
@@ -79,8 +99,22 @@ export const gapConsistencyRule: Rule = {
         distances.push(Math.round(d * 2) / 2);
       }
 
+      // Non-positive distances mean children overlap / use negative margins —
+      // not a clean list a single `gap` could unify. Skip (layout wrapper).
+      if (Math.min(...distances) <= 0) continue;
+
       const spread = Math.max(...distances) - Math.min(...distances);
       if (spread <= TOLERANCE || spread <= baseUnit) continue;
+
+      // If every gap is already a valid Tailwind step / on-grid, the varied
+      // spacing is intentional rhythm, not drift.
+      const allValid = distances.every(
+        (d) =>
+          d > 0 &&
+          (isOnGrid(d, baseUnit, TOLERANCE) ||
+            isNearAny(d, TAILWIND_SPACING_SCALE_PX, TOLERANCE)),
+      );
+      if (allValid) continue;
 
       const mean =
         distances.reduce((s, d) => s + d, 0) / distances.length;
