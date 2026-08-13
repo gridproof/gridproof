@@ -1,24 +1,24 @@
-# Gridproof
+# GridProof
 
 [![npm version](https://img.shields.io/npm/v/gridproof.svg)](https://www.npmjs.com/package/gridproof)
 [![license](https://img.shields.io/npm/l/gridproof.svg)](./LICENSE)
 
-**Gridproof your UI — automated spacing & grid QA in the agent loop.**
+**GridProof your UI — automated spacing & grid QA in the agent loop.**
 
-Gridproof is an [MCP](https://modelcontextprotocol.io) server that renders your
+GridProof is an [MCP](https://modelcontextprotocol.io) server that renders your
 running frontend with Playwright, measures the **computed** geometry of every
 element, checks it against a spacing/token rule set, and hands back a
 structured fix report — so a coding agent can close the loop itself: generate,
 audit, fix, re-audit.
 
-<img src="https://raw.githubusercontent.com/gridproof/gridproof/master/docs/report-screenshot.png" alt="Gridproof HTML report showing spacing violations with fix hints" width="800">
+<img src="https://raw.githubusercontent.com/gridproof/gridproof/master/docs/report-screenshot.png" alt="GridProof HTML report showing spacing violations with fix hints" width="800">
 
 ## The problem
 
 AI coding agents are good at generating UI and bad at keeping it on a grid:
 `py-[13px]` instead of `py-3`, sibling cards with three different gaps,
 icons at 17px next to 24px. None of it breaks anything, so it ships —
-because nothing in the agent loop checks for it. Gridproof is that check.
+because nothing in the agent loop checks for it. GridProof is that check.
 
 ## The loop
 
@@ -84,7 +84,7 @@ targets, which error because it's an accessibility floor, not a style opinion.
 
 ## Tailwind, and non-Tailwind pages
 
-Gridproof is built for Tailwind projects — that's where all four rules apply,
+GridProof is built for Tailwind projects — that's where all four rules apply,
 since `spacing-scale`, `arbitrary-value`, and `gap-consistency` reason about
 Tailwind's spacing scale and utility classes.
 

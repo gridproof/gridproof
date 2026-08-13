@@ -9,7 +9,7 @@ description: >-
   returns structured fix hints to apply to source, then re-checks.
 ---
 
-# Gridproof — spacing & grid QA
+# GridProof — spacing & grid QA
 
 Catch off-scale spacing, arbitrary Tailwind values, inconsistent gaps, and
 non-canonical sizes in a running frontend, fix them in source, and verify — all
@@ -53,7 +53,7 @@ via the `gp_*` MCP tools. Follow this loop exactly.
 
 - **Suggest, don't forbid.** Most findings are `warn`; only sub-44px tap targets
   are `error`. Nothing blocks — there are no exit-code semantics.
-- **The server measures; you edit.** Gridproof never touches source files. It
+- **The server measures; you edit.** GridProof never touches source files. It
   points to the drift and the fix; you make the change.
 - **Fix hints tell you how.** `kind: "tailwind-class"` gives `from`/`to`
   classes; `container-gap` suggests a unifying `gap`; `manual` means trace the
