@@ -35,6 +35,25 @@ function severityRank(s: Violation["severity"]): number {
 }
 
 /**
+ * De-noise same-element cross-rule duplicates (§12): an authored arbitrary
+ * Tailwind class (e.g. `py-[13px]`) drives BOTH its own computed CSS (caught by
+ * spacing-scale) and its class token (caught by arbitrary-value) — the same
+ * physical defect, reported twice. When both fire on the same selector for the
+ * same actual value, drop the spacing-scale one; arbitrary-value's fixHint
+ * carries the precise class rename and is strictly more actionable.
+ */
+function dedupeSpacingArbitrary(violations: readonly Violation[]): Violation[] {
+  const arbitraryKeys = new Set<string>();
+  for (const v of violations) {
+    if (v.ruleId === "arbitrary-value") arbitraryKeys.add(`${v.selector}|${v.actual}`);
+  }
+  if (arbitraryKeys.size === 0) return [...violations];
+  return violations.filter(
+    (v) => v.ruleId !== "spacing-scale" || !arbitraryKeys.has(`${v.selector}|${v.actual}`),
+  );
+}
+
+/**
  * Rules that only make sense on Tailwind pages (gated when non-Tailwind).
  * gap-consistency suggests `set gap-N` classes, meaningless off-Tailwind.
  */
@@ -111,8 +130,10 @@ export function runAudit(params: RunAuditParams): AuditReport {
   });
   const orderOf = (sel: string): number => domIndex.get(sel) ?? Number.MAX_SAFE_INTEGER;
 
+  const deduped = dedupeSpacingArbitrary(found);
+
   // Stable sort: severity (error first), then DOM order, then emission order.
-  const sorted = found
+  const sorted = deduped
     .map((v, i) => ({ v, i }))
     .sort(
       (a, b) =>

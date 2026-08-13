@@ -126,14 +126,46 @@ function groupViolations(violations: readonly Violation[]): Group[] {
 
 const SELECTORS_SHOWN = 4;
 
+/**
+ * A selector built from the collector's structural nth-of-type fallback (spec
+ * §6) — a multi-segment relative path, less stable/readable than an
+ * id/data-testid/class selector.
+ */
+function isStructuralSelector(sel: string): boolean {
+  return sel.includes(" > ");
+}
+
+/**
+ * Pick ONE selector to represent a group in the report: an id/data-testid/class
+ * selector if any member has one (most stable, shortest), else the shortest
+ * structural path. Used instead of listing several raw nth-of-type chains side
+ * by side — those read as noise and overflow the Affected column (spec §6:
+ * "never emit selectors longer than 5 segments"; for a group, show the shared
+ * anchor, not every child's full path).
+ */
+function representativeSelector(selectors: readonly string[]): string {
+  const stable = selectors.find((s) => !isStructuralSelector(s));
+  if (stable !== undefined) return stable;
+  return selectors.reduce((best, s) =>
+    s.split(" > ").length < best.split(" > ").length ? s : best,
+  );
+}
+
 function affectedHtml(selectors: string[]): string {
+  const count = selectors.length;
+  // Grouped structural-path findings: show one representative anchor + count
+  // rather than several raw nth-of-type chains, which would crowd the cell.
+  if (count > 1 && selectors.some(isStructuralSelector)) {
+    const rep = representativeSelector(selectors);
+    return `<span class="count">&times;${count}</span> <code class="sel">${esc(rep)}</code>`;
+  }
   const shown = selectors
     .slice(0, SELECTORS_SHOWN)
     .map((s) => `<code class="sel">${esc(s)}</code>`)
     .join(" ");
-  const extra = selectors.length - SELECTORS_SHOWN;
+  const extra = count - SELECTORS_SHOWN;
   const more = extra > 0 ? ` <span class="muted">+${extra} more</span>` : "";
-  return `<span class="count">&times;${selectors.length}</span> ${shown}${more}`;
+  return `<span class="count">&times;${count}</span> ${shown}${more}`;
 }
 
 function heroBlock(

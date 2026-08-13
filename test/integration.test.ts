@@ -131,6 +131,25 @@ describe("integration: icon detection (icon-detect.html)", () => {
   });
 });
 
+describe("integration: selector length cap (deep-nesting.html)", () => {
+  it("never emits a selector longer than 5 segments, even 9 levels deep with no ids", async () => {
+    const collection = await withRenderedPage(
+      `${base}/deep-nesting.html`,
+      { width: 1440, height: 900 },
+      (page) => collectGeometry(page),
+    );
+    const target = collection.elements.find(
+      (e) => e.computed.paddingTop === "13px",
+    );
+    expect(target).toBeDefined();
+    // no id/testid/unique-class rescue was possible this deep → structural fallback
+    expect(target!.selector.startsWith("#")).toBe(false);
+    expect(target!.selector).toContain(" > ");
+    const segments = target!.selector.split(" > ");
+    expect(segments.length).toBeLessThanOrEqual(5);
+  });
+});
+
 describe("integration: Tailwind-detection gate (plain-css.html)", () => {
   it("non-Tailwind page: spacing/arbitrary silent, canonical still runs", async () => {
     // mobile so the tap-target (accessibility) finding is emitted

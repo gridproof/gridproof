@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — deep nesting (selector length cap, spec §6)</title>
+  </head>
+  <body>
+    <!--
+      Nine levels of unidentified, class-duplicated wrappers (no id, no unique
+      class combo, siblings at every level so the collector must fall back to
+      nth-of-type). The target is 9 levels below <body> with no id anywhere in
+      that chain, so buildSelector's structural fallback runs its full course —
+      this is the only way to exercise the 5-segment cap (spec §6: "never emit
+      selectors longer than 5 segments").
+    -->
+    <div class="lvl">
+      <div class="lvl">
+        <span class="lvl-spacer"></span>
+        <div class="lvl">
+          <span class="lvl-spacer"></span>
+          <div class="lvl">
+            <span class="lvl-spacer"></span>
+            <div class="lvl">
+              <span class="lvl-spacer"></span>
+              <div class="lvl">
+                <span class="lvl-spacer"></span>
+                <div class="lvl">
+                  <span class="lvl-spacer"></span>
+                  <div class="lvl">
+                    <span class="lvl-spacer"></span>
+                    <div class="lvl">
+                      <span class="lvl-spacer"></span>
+                      <div class="lvl">
+                        <div class="lvl"></div>
+                        <!-- deep target: no id, no unique class, 9 levels deep —
+                             identifiable only by its own off-grid inline style. -->
+                        <div class="lvl" style="padding-top: 13px"></div>
+                        <div class="lvl"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

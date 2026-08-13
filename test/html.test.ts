@@ -236,6 +236,69 @@ describe("renderHtml — grouping (efficient at scale)", () => {
     expect(html).toContain("&times;2");
     expect(html).toContain("grouped into 2 fix");
   });
+
+  it("grouped structural-path findings show one representative selector, not a raw multi-selector chain (spec §6)", () => {
+    const html = renderHtml(
+      mkReport({
+        violations: [
+          mkViolation({
+            ruleId: "spacing-scale",
+            severity: "info",
+            selector: "#stat-revenue",
+            actual: "18px",
+            expected: "20px",
+            fixHint: { kind: "css-value", note: "trace padding-top:18px" },
+          }),
+          mkViolation({
+            ruleId: "spacing-scale",
+            severity: "info",
+            selector: "div > section:nth-of-type(1) > div:nth-of-type(2)",
+            actual: "18px",
+            expected: "20px",
+            fixHint: { kind: "css-value", note: "trace padding-top:18px" },
+          }),
+          mkViolation({
+            ruleId: "spacing-scale",
+            severity: "info",
+            selector: "div > section:nth-of-type(1) > div:nth-of-type(3)",
+            actual: "18px",
+            expected: "20px",
+            fixHint: { kind: "css-value", note: "trace padding-top:18px" },
+          }),
+        ],
+        summary: {
+          total: 3,
+          byRule: { "spacing-scale": 3 },
+          errors: 0,
+          warns: 0,
+          infos: 3,
+        },
+      }),
+      META,
+    );
+    // one shared anchor + count, not the raw nth-of-type chains
+    expect(html).toContain("&times;3");
+    expect(html).toContain('class="sel">#stat-revenue<');
+    expect(html).not.toContain("nth-of-type");
+    // exactly one <code class="sel"> in the Affected cell for this group
+    expect((html.match(/class="sel"/g) ?? []).length).toBe(1);
+  });
+
+  it("never renders an emitted selector longer than 5 segments", () => {
+    const longButValid = "div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(3) > div:nth-of-type(4) > div:nth-of-type(5)";
+    expect(longButValid.split(" > ")).toHaveLength(5);
+    const html = renderHtml(
+      mkReport({
+        violations: [mkViolation({ selector: longButValid })],
+        summary: { total: 1, byRule: { "spacing-scale": 1 }, errors: 0, warns: 1, infos: 0 },
+      }),
+      META,
+    );
+    const sels = [...html.matchAll(/class="sel">(.*?)</g)].map((m) => m[1] ?? "");
+    for (const s of sels) {
+      expect(s.split("&gt;").length).toBeLessThanOrEqual(5);
+    }
+  });
 });
 
 describe("renderHtml — clean report", () => {
