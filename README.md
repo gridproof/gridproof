@@ -11,14 +11,13 @@ element, checks it against a spacing/token rule set, and hands back a
 structured fix report — so a coding agent can close the loop itself: generate,
 audit, fix, re-audit.
 
-<img src="./docs/report-screenshot.png" alt="Gridproof HTML report showing spacing violations with fix hints" width="800">
-<!-- SCREENSHOT: HTML report — findings state. Replace docs/report-screenshot.png before launch. -->
+<img src="https://raw.githubusercontent.com/gridproof/gridproof/master/docs/report-screenshot.png" alt="Gridproof HTML report showing spacing violations with fix hints" width="800">
 
 ## The problem
 
 AI coding agents are good at generating UI and bad at keeping it on a grid:
 `py-[13px]` instead of `py-3`, sibling cards with three different gaps,
-icons at 17px next to icons at 24px. None of it breaks anything, so it ships —
+icons at 17px next to 24px. None of it breaks anything, so it ships —
 because nothing in the agent loop checks for it. Gridproof is that check.
 
 ## The loop
