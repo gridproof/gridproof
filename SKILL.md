@@ -1,45 +1,46 @@
 ---
 name: gridproof
 description: >-
-  Automated spacing & grid QA for frontends, inside the agent loop. Use for
+  Automated spacing & grid QA for web UIs, inside the agent loop. Use for
   "design QA", "check spacing", "fix my grid/spacing", "audit UI", "design
-  review", and automatically after generating or modifying frontend UI. Renders
+  review", and automatically after you generate or modify frontend UI. Renders
   the running app with Playwright, measures computed geometry, and returns
   structured fix hints to apply to source, then re-checks.
 ---
 
 # Gridproof — spacing & grid QA
 
-Use the `gp_*` MCP tools to catch off-scale spacing, inconsistent gaps, and
-non-canonical sizes in a running frontend, then fix them in source and verify.
+Catch off-scale spacing, arbitrary Tailwind values, inconsistent gaps, and
+non-canonical sizes in a running frontend, fix them in source, and verify — all
+via the `gp_*` MCP tools. Follow this loop exactly.
 
-> Note: while Gridproof is on its Day 1 scaffold, `gp_audit` returns **raw
-> geometry only** and `gp_check_element` is a stub. The workflow below is the
-> intended loop once rules ship; `gp_get_config` already works.
+## Loop
 
-## Workflow
-
-1. **Ensure the dev server is running** and get its URL (e.g.
-   `http://localhost:5173`). If it is not running, start it before auditing.
-2. **Read the config, then audit.** Call `gp_get_config` to learn the active
-   `baseUnit`, `canonicalSizes`, and rule severities. Then call `gp_audit` at
-   **1440×900**.
-3. **Fix at the right altitude.** Group violations by `fixHint`. Prefer
-   **container-level fixes** (e.g. set `gap-4` on the parent and remove child
-   margins) over per-element patches. Apply edits to source in one commit-sized
-   batch.
-4. **Verify.** Call `gp_check_element` for each touched element, then run a final
-   `gp_audit` to confirm the report is clean.
-5. **Mobile, if it matters.** Repeat the audit at **375×812**.
-6. **Do not silence with suppressions casually.** Never "fix" a finding by adding
-   `data-gp-ignore` unless the user explicitly approves the exception — and when
-   they do, record the reason in `gridproof.config.json` `suppress` instead.
+1. **Get a running URL.** Ensure the dev server is running; obtain its URL
+   (e.g. `http://localhost:5173`). If it isn't running, start it first.
+2. **Read config, then audit.** Call `gp_get_config` to learn the active
+   `baseUnit`, `canonicalSizes`, `minTapTarget`, and rule severities. Then call
+   `gp_audit` at **1440×900**.
+3. **Fix at the right altitude, in one batch.** Group violations by `fixHint`.
+   Prefer **container-level** fixes over per-element ones — e.g. set `gap-4` on
+   the parent and remove child margins rather than patching each child. Apply the
+   edits to source as a single commit-sized batch.
+4. **Verify.** Call `gp_check_element` for each element you touched, then run a
+   final `gp_audit` to confirm the report is clean.
+5. **Check mobile if it matters.** Repeat the audit at **375×812**. Tap-target
+   findings (WCAG 2.5.8, <44px) are reported at mobile widths only.
+6. **Don't silence findings.** Never "fix" a violation by adding
+   `data-gp-ignore` unless the user explicitly approves that exception. When they
+   do, record the reason in `gridproof.config.json` under `suppress` instead.
 7. **Anti-loop guard.** Stop after **3 fix→recheck cycles**. Report any remaining
    items to the user rather than looping.
 
 ## Principles
 
 - **Suggest, don't forbid.** Most findings are `warn`; only sub-44px tap targets
-  are `error` (WCAG 2.5.8). Nothing blocks.
-- **The server measures; you edit.** Gridproof never touches source files — it
-  points, you fix.
+  are `error`. Nothing blocks — there are no exit-code semantics.
+- **The server measures; you edit.** Gridproof never touches source files. It
+  points to the drift and the fix; you make the change.
+- **Fix hints tell you how.** `kind: "tailwind-class"` gives `from`/`to`
+  classes; `container-gap` suggests a unifying `gap`; `manual` means trace the
+  value yourself (`note` says where to look).

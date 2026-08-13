@@ -38,7 +38,7 @@ export function runAudit(params: RunAuditParams): AuditReport {
 
   const selected = rules ? registry.select(rules) : registry.all();
 
-  const ctx = { config, elements };
+  const ctx = { config, elements, viewport };
   const produced: Violation[] = [];
   for (const rule of selected) {
     produced.push(...rule.check(ctx));

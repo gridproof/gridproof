@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG } from "../src/config/defaults.js";
 import { spacingScaleRule } from "../src/engine/rules/spacing-scale.js";
 import type { Violation } from "../src/report/schema.js";
-import { makeElement } from "./helpers.js";
+import { makeCtx, makeElement } from "./helpers.js";
 
 function run(...els: ReturnType<typeof makeElement>[]): Violation[] {
-  return spacingScaleRule.check({ config: DEFAULT_CONFIG, elements: els });
+  return spacingScaleRule.check(makeCtx(els));
 }
 
 describe("spacing-scale side-collapse", () => {

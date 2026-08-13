@@ -52,15 +52,18 @@ afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-async function auditFixture(name: string): Promise<AuditReport> {
+async function auditFixture(
+  name: string,
+  viewport: { width: number; height: number } = { width: 1440, height: 900 },
+): Promise<AuditReport> {
   const collection = await withRenderedPage(
     `${base}/${name}`,
-    { width: 1440, height: 900 },
+    viewport,
     (page) => collectGeometry(page),
   );
   return runAudit({
     url: `${base}/${name}`,
-    viewport: { width: 1440, height: 900 },
+    viewport,
     elements: collection.elements,
     config: DEFAULT_CONFIG,
     registry,
@@ -176,8 +179,11 @@ describe("integration: gp_check_element (scoped re-check)", () => {
 });
 
 describe("integration: canonical-size (canonical.html)", () => {
-  it("flags a 32px tap target as an error citing WCAG 2.5.8", async () => {
-    const report = await auditFixture("canonical.html");
+  it("flags a 32px tap target as an error citing WCAG 2.5.8 (mobile viewport)", async () => {
+    const report = await auditFixture("canonical.html", {
+      width: 375,
+      height: 812,
+    });
     const tap = report.violations.find((v) => v.selector === "#tap-bad");
     expect(tap).toBeDefined();
     expect(tap?.ruleId).toBe("canonical-size");
@@ -187,6 +193,16 @@ describe("integration: canonical-size (canonical.html)", () => {
     // the 48px button is fine
     expect(
       report.violations.some((v) => v.selector === "#tap-ok"),
+    ).toBe(false);
+  });
+
+  it("does NOT flag the same 32px tap target at desktop (>=768) width", async () => {
+    const report = await auditFixture("canonical.html", {
+      width: 1440,
+      height: 900,
+    });
+    expect(
+      report.violations.some((v) => v.selector === "#tap-bad"),
     ).toBe(false);
   });
 

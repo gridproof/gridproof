@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG: GridproofConfig = {
   // legitimate, not drift).
   canonicalSizes: [12, 14, 16, 20, 24, 32, 40, 48],
   minTapTarget: 44,
+  tapTargetBreakpoint: 768,
   rules: {
     "spacing-scale": "warn",
     "arbitrary-value": "warn",

@@ -48,6 +48,12 @@ export const gridproofConfigSchema = z.object({
   allowedValues: z.array(z.number()),
   canonicalSizes: z.array(z.number()),
   minTapTarget: z.number().positive(),
+  /**
+   * Viewport width (px) below which tap-target checks apply. WCAG 2.5.8 is a
+   * touch criterion, so tap-target findings are emitted only when the audit
+   * viewport is narrower than this (default 768 = the mobile breakpoint).
+   */
+  tapTargetBreakpoint: z.number().positive(),
   rules: ruleSeverityMapSchema,
   suppress: z.array(suppressionSchema),
 });

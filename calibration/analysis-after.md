@@ -14,6 +14,11 @@ viewports as the raw run. Raw dump: [`report-after.md`](report-after.md).
 **Under the <5% bar (§10/§12).** Findings dropped 7×; every remaining finding is
 a real sub-44px interactive element.
 
+**Final (Day 5, viewport-aware tap-target, breakpoint 768):** desktop 1440×900 =
+**0** findings (tap-target checks are mobile-only; icons already clean); mobile
+375×812 = **30** findings, all genuine sub-44px tap targets (0 FP). Combined FP
+rate **0%**.
+
 ## After breakdown (both viewports)
 
 | Rule | Before | After | Notes |

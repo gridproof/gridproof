@@ -57,7 +57,11 @@ function el(selector: string, classList: string[]): CollectedElement {
 }
 
 function run(elements: CollectedElement[]): Violation[] {
-  return arbitraryValueRule.check({ config: DEFAULT_CONFIG, elements });
+  return arbitraryValueRule.check({
+    config: DEFAULT_CONFIG,
+    elements,
+    viewport: { width: 1440, height: 900 },
+  });
 }
 
 describe("arbitrary-value rule", () => {

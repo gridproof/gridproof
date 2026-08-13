@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG } from "../src/config/defaults.js";
 import { canonicalSizeRule } from "../src/engine/rules/canonical-size.js";
 import type { Violation } from "../src/report/schema.js";
-import { makeElement } from "./helpers.js";
+import { makeCtx, makeElement } from "./helpers.js";
 
+const MOBILE = { width: 375, height: 812 };
+const DESKTOP = { width: 1440, height: 900 };
+
+/** Icons run at any viewport; default to mobile so tap-target tests fire. */
 function run(...els: ReturnType<typeof makeElement>[]): Violation[] {
-  return canonicalSizeRule.check({ config: DEFAULT_CONFIG, elements: els });
+  return canonicalSizeRule.check(makeCtx(els, { viewport: MOBILE }));
 }
 
 describe("canonical-size icons", () => {
@@ -67,5 +70,23 @@ describe("canonical-size tap targets", () => {
     expect(
       run(makeElement({ isTapTarget: false, rect: { width: 80, height: 20 } })),
     ).toHaveLength(0);
+  });
+
+  it("viewport-aware: a 36px button is flagged at 375 but NOT at 1440", () => {
+    const btn = makeElement({
+      selector: "#b36",
+      isTapTarget: true,
+      rect: { width: 120, height: 36 },
+    });
+    const mobile = canonicalSizeRule.check(
+      makeCtx([btn], { viewport: MOBILE }),
+    );
+    expect(mobile).toHaveLength(1);
+    expect(mobile[0]?.severity).toBe("error");
+
+    const desktop = canonicalSizeRule.check(
+      makeCtx([btn], { viewport: DESKTOP }),
+    );
+    expect(desktop).toHaveLength(0);
   });
 });

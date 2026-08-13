@@ -19,12 +19,17 @@ function pxStr(n: number): string {
 export const canonicalSizeRule: Rule = {
   id: "canonical-size",
   check(ctx: RuleContext): Violation[] {
-    const { canonicalSizes, minTapTarget } = ctx.config;
+    const { canonicalSizes, minTapTarget, tapTargetBreakpoint } = ctx.config;
     // Interactive tap-target severity follows config (default "error").
     const interactiveSeverity = ctx.config.rules["canonical-size"] ?? "error";
     const violations: Violation[] = [];
 
     const canonicalSet = new Set(canonicalSizes);
+
+    // WCAG 2.5.8 (44px) is a TOUCH-target criterion — irrelevant for desktop
+    // pointer nav. Only apply tap-target checks below the mobile breakpoint.
+    // Icon-canonical checks run at every viewport.
+    const checkTapTargets = ctx.viewport.width < tapTargetBreakpoint;
 
     for (const el of ctx.elements) {
       const w = el.rect.width;
@@ -59,8 +64,8 @@ export const canonicalSizeRule: Rule = {
         }
       }
 
-      // Interactive — tap target must meet the minimum.
-      if (el.isTapTarget && w > 0 && h > 0) {
+      // Interactive — tap target must meet the minimum (mobile viewports only).
+      if (checkTapTargets && el.isTapTarget && w > 0 && h > 0) {
         const min = Math.min(w, h);
         if (min < minTapTarget) {
           const property = w <= h ? "width" : "height";

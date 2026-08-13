@@ -51,6 +51,8 @@ export function mergeConfig(
     allowedValues: file.allowedValues ?? DEFAULT_CONFIG.allowedValues,
     canonicalSizes: file.canonicalSizes ?? DEFAULT_CONFIG.canonicalSizes,
     minTapTarget: file.minTapTarget ?? DEFAULT_CONFIG.minTapTarget,
+    tapTargetBreakpoint:
+      file.tapTargetBreakpoint ?? DEFAULT_CONFIG.tapTargetBreakpoint,
     rules: { ...DEFAULT_CONFIG.rules, ...(file.rules ?? {}) },
     suppress: file.suppress ?? DEFAULT_CONFIG.suppress,
   };

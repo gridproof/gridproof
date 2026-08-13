@@ -2,53 +2,68 @@
 
 **Gridproof your UI — automated spacing & grid QA in the agent loop.**
 
-Gridproof is an [MCP](https://modelcontextprotocol.io) server (stdio) + Claude Code
-skill that renders your running frontend with Playwright, measures computed
-geometry, checks it against a spacing/token rule set, and returns a structured fix
-report the agent applies to source — then re-checks. It runs **inside the agent
-loop**, so design drift (`py-[13px]`, ragged gaps, off-canonical icon sizes) gets
-caught before it ships.
+Gridproof is an [MCP](https://modelcontextprotocol.io) server (stdio) plus a
+Claude Code skill. It renders your running frontend with Playwright, measures the
+**computed** geometry of every element, checks it against a spacing/token rule
+set, and returns a structured fix report the agent applies to source — then
+re-checks. It runs **inside the agent loop**, so design drift (`py-[13px]`,
+ragged gaps, off-canonical icon sizes, sub-44px tap targets) gets caught before
+it ships.
 
-> **Status:** Day 1 scaffold. The MCP server boots and `gp_audit` returns **raw
-> collected geometry**. Rule detection (spacing-scale, arbitrary-value,
-> gap-consistency, canonical-size) lands in subsequent milestones — see
-> [`gridproof-spec.md`](gridproof-spec.md).
+```
+agent generates UI → gp_audit(url) → JSON violations with fix hints
+→ agent edits source → gp_audit(url) → clean report = done
+```
 
----
+## Demo
+
+<!-- GIF-DEMO-PLACEHOLDER: recorded at launch. Do not fabricate output. -->
+_Demo GIF coming at launch._
 
 ## Quickstart
 
 ```bash
-# 1. Install browsers once (Playwright Chromium — one-time, ~150MB)
+# 1. Install the Chromium build Playwright uses (one-time, ~150MB)
 npx playwright install chromium
 
-# 2. Build
-npm install
-npm run build
-
-# 3. Run the MCP server over stdio
+# 2. Run the server (via npx once published)
 npx gridproof
 ```
 
-### Add to Claude Code
+### Register in Claude Code
 
-Register the server (from the repo root, after `npm run build`):
+Once published:
+
+```bash
+claude mcp add gridproof -- npx -y gridproof
+```
+
+From a local checkout (after `npm install && npm run build`):
 
 ```bash
 claude mcp add gridproof -- node /absolute/path/to/gridproof/dist/index.js
 ```
 
-Or, once published, `claude mcp add gridproof -- npx -y gridproof`.
-
 The server exposes three tools:
 
 | Tool | Purpose |
 |------|---------|
-| `gp_audit` | Render a URL and audit its geometry. **Day 1: returns raw geometry, no rules.** |
-| `gp_check_element` | Re-check a single element after a fix (Day 1: stub). |
-| `gp_get_config` | Return the resolved config (defaults + `gridproof.config.json`). Fully working. |
+| `gp_audit` | Render a URL and audit its geometry. Returns an `AuditReport` (violations + fix hints). |
+| `gp_check_element` | Re-check a single element's subtree after a fix — cheap loop closer. |
+| `gp_get_config` | Return the resolved config (defaults merged with `gridproof.config.json`). |
 
----
+## Rules
+
+Four rules, all reporting `warn` by default except tap targets:
+
+- **`spacing-scale`** — margin/padding/gap values that aren't on the base grid, the Tailwind scale, or an allowed value. Carries the nearest valid value.
+- **`arbitrary-value`** — off-scale arbitrary Tailwind spacing classes (`p-[13px]` → `p-3`). Deliberate fixed dimensions (`w-[200px]`) and border-radius are left alone.
+- **`gap-consistency`** — a flex/grid **layout** list with ragged sibling spacing → suggests a unifying `gap` on the container.
+- **`canonical-size`** — icons off the canonical size set (warn), and interactive elements below the tap-target minimum (**error**, WCAG 2.5.8) — reported at mobile widths only.
+
+**Philosophy: suggest, don't forbid.** Everything is `warn` except sub-44px tap
+targets; nothing blocks, and there are no exit-code semantics. The server
+measures and points — the agent edits the source.
 
 ## Configuration
 
@@ -59,37 +74,40 @@ defaults shown):
 {
   "baseUnit": 4,
   "allowedValues": [1, 2],
-  "canonicalSizes": [16, 20, 24, 32, 40, 48],
+  "canonicalSizes": [12, 14, 16, 20, 24, 32, 40, 48],
   "minTapTarget": 44,
+  "tapTargetBreakpoint": 768,
   "rules": {
     "spacing-scale": "warn",
     "arbitrary-value": "warn",
     "gap-consistency": "warn",
     "canonical-size": "error"
   },
-  "suppress": []
+  "suppress": [
+    { "selector": ".hero-art *", "rules": ["spacing-scale"] },
+    { "value": "13px", "reason": "optical correction, logo lockup" }
+  ]
 }
 ```
 
-Philosophy: **suggest, don't forbid.** Severity is `warn` everywhere except tap
-targets; no rule blocks. Inline suppression via `data-gp-ignore` lands with the
-rule engine.
+- `tapTargetBreakpoint` — tap-target checks apply only when the audit viewport is narrower than this (WCAG 2.5.8 is a touch criterion, irrelevant for desktop pointer nav).
+- Inline suppression: `data-gp-ignore` (all rules) or `data-gp-ignore="spacing-scale gap-consistency"` on an element skips its subtree for those rules. Suppressed findings are counted, never listed.
 
----
+## What it deliberately does NOT do
+
+- **No computer vision / screenshot analysis.** It reads computed geometry, not pixels.
+- **No CI runner.** It's an in-loop tool, not a gate; no exit codes.
+- **No source editing by the server.** It measures and suggests; the agent (which has your codebase) makes the edits.
+- **Not yet (v2, extension points only):** column-grid clustering, gutter consistency, cross-breakpoint alignment drift, baseline rhythm, Figma token import.
 
 ## Development
 
 ```bash
-npm run dev     # run the server from TypeScript (tsx)
+npm install
 npm run build   # tsc → dist/
-npm test        # vitest
+npm test        # vitest (unit + Playwright integration)
+npm run dev     # run the server from TypeScript (tsx)
 ```
-
-Fixtures for rule development live in [`fixtures/`](fixtures/).
-
-## Demo
-
-_GIF demo placeholder — added once rules land._
 
 ## License
 

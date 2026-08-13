@@ -1,8 +1,11 @@
+import { DEFAULT_CONFIG } from "../src/config/defaults.js";
+import type { GridproofConfig } from "../src/config/schema.js";
 import type {
   CollectedComputed,
   CollectedElement,
   CollectedRect,
 } from "../src/engine/collector.js";
+import type { RuleContext } from "../src/engine/rule.js";
 import type { IgnoreSpec } from "../src/util/suppress.js";
 
 /** All-zero computed geometry; override selectively per test. */
@@ -70,5 +73,17 @@ export function makeElement(o: MakeElementOptions = {}): CollectedElement {
     autoMarginX: o.autoMarginX ?? false,
     styleAttr: o.styleAttr ?? null,
     snippet: `<${o.tagName ?? "div"}>`,
+  };
+}
+
+/** Build a RuleContext for unit tests. Defaults to a 1440×900 viewport. */
+export function makeCtx(
+  elements: CollectedElement[],
+  opts: { config?: GridproofConfig; viewport?: { width: number; height: number } } = {},
+): RuleContext {
+  return {
+    config: opts.config ?? DEFAULT_CONFIG,
+    elements,
+    viewport: opts.viewport ?? { width: 1440, height: 900 },
   };
 }

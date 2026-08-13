@@ -16,6 +16,8 @@ export interface RuleContext {
   readonly config: GridproofConfig;
   /** Full set of collected elements for the audited subtree. */
   readonly elements: readonly CollectedElement[];
+  /** The audit viewport (rules like canonical-size gate tap targets on width). */
+  readonly viewport: { width: number; height: number };
 }
 
 export interface Rule {
