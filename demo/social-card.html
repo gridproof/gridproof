@@ -27,34 +27,33 @@ html, body { width:1200px; height:630px; overflow:hidden; background:var(--bg); 
 }
 
 .content {
-  position:relative; z-index:1; display:flex;
-  height:100%;
+  position:relative; z-index:1; display:flex; align-items:center;
+  height:100%; padding:0 64px; gap:48px;
 }
 
-.left { flex:0 0 600px; display:flex; flex-direction:column; justify-content:center; padding:0 40px 0 64px; }
-.logo { font-family:var(--mono); font-weight:700; font-size:84px; letter-spacing:-0.01em; color:var(--muted); margin-bottom:26px; }
+.left { flex:0 0 400px; }
+.logo { font-family:var(--mono); font-weight:700; font-size:56px; letter-spacing:-0.01em; color:var(--muted); margin-bottom:18px; }
 .logo b { color:var(--text); }
-.tagline { font-size:48px; line-height:1.22; color:var(--text); font-weight:500; letter-spacing:-0.01em; margin-bottom:24px; }
+.tagline { font-size:32px; line-height:1.28; color:var(--text); font-weight:500; letter-spacing:-0.01em; margin-bottom:16px; }
 .tagline .hi { color:var(--ok); }
-.sub { font-family:var(--mono); font-size:29px; color:var(--faint); line-height:1.35; }
-.chipbar { display:flex; flex-wrap:wrap; gap:11px; margin-top:26px; }
-.chip { font-family:var(--mono); font-size:25px; color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:6px 14px; background:rgba(255,255,255,0.015); }
+.sub { font-family:var(--mono); font-size:19px; color:var(--faint); line-height:1.4; }
+.chipbar { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+.chip { font-family:var(--mono); font-size:17px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:5px 10px; background:rgba(255,255,255,0.015); }
 
-/* Right half: the report interface itself, rendered 3x larger than the prior
-   0.5 scale (=1.5) and cropped to its top-left corner — the panel is flush to
-   the card's right/top/bottom edges, so only that corner is visible. */
-.right {
-  flex:0 0 600px; position:relative; overflow:hidden;
-  border-left:1px solid var(--line); background:var(--panel);
+/* Right: the report interface itself, rendered 3x larger than the original
+   0.5 scale (=1.5), inside a rounded floating frame (spec: "like the first
+   version") that clips to its top-left corner. */
+/* flex-start + an oversized frame lets the panel bleed past the card's right
+   edge (cut by the canvas boundary itself, not by its own border/corner) —
+   reads as "the interface continues off-screen" rather than a sealed box. */
+.right { flex:1 1 auto; display:flex; justify-content:flex-start; align-items:center; }
+.frame {
+  width:760px; height:540px; border-radius:14px 0 0 14px; overflow:hidden;
+  border:1px solid var(--line); border-right:none; background:var(--panel);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02);
 }
-.right::after {
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:
-    linear-gradient(90deg, transparent 52%, var(--bg) 96%),
-    linear-gradient(180deg, transparent 55%, var(--bg) 97%);
-}
-.right iframe {
-  position:absolute; top:0; left:0; width:864px; height:900px; border:0;
+.frame iframe {
+  width:864px; height:900px; border:0;
   transform:scale(1.5); transform-origin:top left; pointer-events:none;
 }
 </style>
@@ -73,7 +72,7 @@ html, body { width:1200px; height:630px; overflow:hidden; background:var(--bg); 
         </div>
       </div>
       <div class="right">
-        <iframe src="demo-report-mobile.html" scrolling="no"></iframe>
+        <div class="frame"><iframe src="demo-report-mobile.html" scrolling="no"></iframe></div>
       </div>
     </div>
   </div>
