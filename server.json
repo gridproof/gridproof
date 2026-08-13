@@ -3,7 +3,7 @@
   "name": "io.github.gridproof/gridproof",
   "title": "GridProof",
   "description": "Gridproof your UI — automated spacing & grid QA in the agent loop (MCP server).",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "websiteUrl": "https://www.npmjs.com/package/gridproof",
   "repository": {
     "url": "https://github.com/gridproof/gridproof",
@@ -14,7 +14,7 @@
     {
       "registryType": "npm",
       "identifier": "gridproof",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "transport": {
         "type": "stdio"
       }
