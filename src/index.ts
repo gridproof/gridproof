@@ -4,32 +4,39 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerAuditTool } from "./tools/audit.js";
 import { registerCheckElementTool } from "./tools/check-element.js";
 import { registerConfigTool } from "./tools/config.js";
+import { registerReportTool } from "./tools/report.js";
 import { registry } from "./engine/rule.js";
 import { registerDefaultRules } from "./engine/rules/register.js";
 import { shutdownRenderer } from "./engine/renderer.js";
+import { runCli } from "./cli.js";
+import { VERSION } from "./version.js";
 
 /**
- * Gridproof MCP server entry (spec §4). Stdio transport, three tools:
- * gp_audit, gp_check_element, gp_get_config. Chromium is launched lazily by the
- * renderer on first audit, not at boot — so the server loads instantly in
- * Claude Code even before browsers are installed.
+ * Gridproof entry. Default: MCP server over stdio (tools gp_audit,
+ * gp_check_element, gp_get_config, gp_report). With `--report <url>` it runs a
+ * one-shot CLI audit that writes an HTML report instead of starting the server.
+ * Chromium is launched lazily by the renderer on first audit, not at boot.
  */
 
 const PACKAGE_NAME = "gridproof";
-const PACKAGE_VERSION = "0.1.0";
 
 async function main(): Promise<void> {
-  const server = new McpServer({
-    name: PACKAGE_NAME,
-    version: PACKAGE_VERSION,
-  });
-
-  // Populate the rule registry before any audit runs.
+  // Populate the rule registry before any audit runs (both modes need it).
   registerDefaultRules(registry);
+
+  // CLI mode: --report <url> [--out <path>] [--viewport WxH].
+  const argv = process.argv.slice(2);
+  if (argv.includes("--report")) {
+    const code = await runCli(argv);
+    process.exit(code);
+  }
+
+  const server = new McpServer({ name: PACKAGE_NAME, version: VERSION });
 
   registerAuditTool(server);
   registerCheckElementTool(server);
   registerConfigTool(server);
+  registerReportTool(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

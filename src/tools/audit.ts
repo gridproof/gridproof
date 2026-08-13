@@ -1,12 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { loadConfig } from "../config/loader.js";
 import { ruleIdSchema } from "../config/schema.js";
-import { collectGeometry } from "../engine/collector.js";
-import { RenderError, withRenderedPage } from "../engine/renderer.js";
-import { registry } from "../engine/rule.js";
-import { runAudit } from "../engine/runner.js";
-import { suppressSelectorsFromConfig } from "../util/suppress.js";
+import { performAudit } from "../engine/perform-audit.js";
 
 /**
  * gp_audit (spec §5.1) — primary tool. Renders the URL, collects geometry in a
@@ -67,95 +62,50 @@ export function registerAuditTool(server: McpServer): void {
       },
     },
     async (args: AuditInput) => {
-      try {
-        // Load config first — selector-form suppressions must be matched in-page.
-        let config;
-        try {
-          ({ config } = await loadConfig());
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          return {
-            content: [{ type: "text" as const, text: msg }],
-            isError: true,
-          };
-        }
+      const result = await performAudit({
+        url: args.url,
+        viewport: args.viewport,
+        rules: args.rules,
+        selector: args.selector,
+        maxViolations: args.maxViolations,
+      });
 
-        const collection = await withRenderedPage(
-          args.url,
-          args.viewport,
-          (page) =>
-            collectGeometry(page, {
-              selector: args.selector,
-              suppressSelectors: suppressSelectorsFromConfig(config.suppress),
-            }),
-        );
-
-        if (!collection.rootFound) {
-          const sel = args.selector ?? "body";
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Selector "${sel}" matched no element at ${args.url}. Check the selector or omit it to audit <body>.`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        const report = runAudit({
-          url: args.url,
-          viewport: args.viewport,
-          elements: collection.elements,
-          config,
-          registry,
-          rules: args.rules,
-          maxViolations: args.maxViolations,
-          isTailwind: collection.isTailwind,
-        });
-
-        const extra: string[] = [...report.notes];
-        if (collection.capped) {
-          extra.push(
-            `Element cap of ${collection.cap} reached during collection; narrow with "selector" for full coverage.`,
-          );
-        }
-        if (report.truncated) {
-          extra.push(
-            `Showing worst ${report.violations.length} of ${report.summary.total}; raise "maxViolations" to see more.`,
-          );
-        }
-
-        if (report.suppressedCount > 0) {
-          extra.push(`${report.suppressedCount} finding(s) suppressed.`);
-        }
-
-        const s = report.summary;
-        const summary =
-          `gp_audit: ${s.total} violation(s) (${s.errors} error, ${s.warns} warn, ${s.infos} info) ` +
-          `on ${args.url} at ${args.viewport.width}×${args.viewport.height}. ` +
-          `byRule: ${Object.entries(s.byRule)
-            .map(([r, n]) => `${r}=${n}`)
-            .join(", ") || "none"}.` +
-          (extra.length > 0 ? ` ${extra.join(" ")}` : "");
-
+      if (!result.ok) {
         return {
-          content: [{ type: "text" as const, text: summary }],
-          structuredContent: report,
-        };
-      } catch (err) {
-        if (err instanceof RenderError) {
-          return {
-            content: [{ type: "text" as const, text: err.message }],
-            isError: true,
-          };
-        }
-        const msg = err instanceof Error ? err.message : String(err);
-        return {
-          content: [{ type: "text" as const, text: `gp_audit failed: ${msg}` }],
+          content: [{ type: "text" as const, text: result.message }],
           isError: true,
         };
       }
+
+      const report = result.report;
+      const extra: string[] = [...report.notes];
+      if (result.capped) {
+        extra.push(
+          `Element cap of ${result.cap} reached during collection; narrow with "selector" for full coverage.`,
+        );
+      }
+      if (report.truncated) {
+        extra.push(
+          `Showing worst ${report.violations.length} of ${report.summary.total}; raise "maxViolations" to see more.`,
+        );
+      }
+      if (report.suppressedCount > 0) {
+        extra.push(`${report.suppressedCount} finding(s) suppressed.`);
+      }
+
+      const s = report.summary;
+      const summary =
+        `gp_audit: ${s.total} violation(s) (${s.errors} error, ${s.warns} warn, ${s.infos} info) ` +
+        `on ${args.url} at ${args.viewport.width}×${args.viewport.height}. ` +
+        `byRule: ${Object.entries(s.byRule)
+          .map(([r, n]) => `${r}=${n}`)
+          .join(", ") || "none"}.` +
+        (extra.length > 0 ? ` ${extra.join(" ")}` : "");
+
+      return {
+        content: [{ type: "text" as const, text: summary }],
+        structuredContent: report,
+      };
     },
   );
 }
