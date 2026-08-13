@@ -96,30 +96,42 @@
 
       <!-- Stat cards -->
       <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <!-- VIOLATION (spacing-scale, warn): genuine off-grid padding-top,
-             set via inline style — not a Tailwind arbitrary class. -->
+        <!-- VIOLATION (spacing-scale, info x3): same off-grid padding-top
+             (18px, distinct from the 13px/15px values elsewhere so it doesn't
+             collide with those) baked into all three cards via a shared
+             StatCard component — genuine drift, but the engine downgrades a
+             value repeated across ≥3 elements to "info" (library-sourced, not
+             a one-off the agent authored; can't fix without touching the
+             shared component). -->
         <div
           id="stat-revenue"
           class="bg-white rounded-lg border border-slate-200 p-6"
-          style="padding-top: 13px"
+          style="padding-top: 18px"
         >
           <p class="text-sm text-slate-500">Total Revenue</p>
           <p class="text-2xl font-semibold text-slate-900 mt-1">$48,290</p>
         </div>
-        <div class="bg-white rounded-lg border border-slate-200 p-6">
+        <div
+          class="bg-white rounded-lg border border-slate-200 p-6"
+          style="padding-top: 18px"
+        >
           <div class="flex items-center justify-between">
             <p class="text-sm text-slate-500">Active Users</p>
             <!-- VIOLATION (arbitrary-value, warn): px-[15px] is an off-scale
                  arbitrary class → suggests px-4 (collapses to one shorthand
                  "padding" finding, since left/right share the value). -->
             <span
+              id="active-users-delta"
               class="px-[15px] py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium"
               >+4.2%</span
             >
           </div>
           <p class="text-2xl font-semibold text-slate-900 mt-1">1,204</p>
         </div>
-        <div class="bg-white rounded-lg border border-slate-200 p-6">
+        <div
+          class="bg-white rounded-lg border border-slate-200 p-6"
+          style="padding-top: 18px"
+        >
           <p class="text-sm text-slate-500">Conversion Rate</p>
           <p class="text-2xl font-semibold text-slate-900 mt-1">3.8%</p>
         </div>

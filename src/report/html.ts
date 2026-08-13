@@ -292,7 +292,7 @@ tbody tr:hover { background:rgba(255,255,255,0.015); }
 .c-fix .from { color:var(--error); } .c-fix .to { color:var(--ok); } .c-fix .arrow { color:var(--faint); }
 .c-aff { color:var(--faint); font-size:12px; line-height:1.9; }
 .c-aff .count { font-family:var(--mono); font-weight:700; color:var(--text); margin-right:6px; }
-.wcag { color:var(--info); } .muted { color:var(--faint); }
+.wcag { color:var(--info); white-space:nowrap; } .muted { color:var(--faint); }
 tr.sev-info td { opacity:0.6; }
 tr.empty td { text-align:center; color:var(--faint); padding:30px 12px; }
 tr.more td, tr.grouped td { text-align:center; color:var(--faint); font-size:11.5px; padding:12px; }
