@@ -12,9 +12,12 @@
         margin: 0;
         padding: 24px;
       }
-      /* VIOLATION target: 13px padding is off the 4px base scale → expected 12px. */
+      /* VIOLATION target: single off-scale value — padding-top 13px is off the
+         4px base scale → expected 12px. Other sides stay on-scale so exactly
+         one spacing-scale violation fires on this node. */
       #off-scale-box {
-        padding: 13px;
+        padding: 0;
+        padding-top: 13px;
         background: #eef;
         border: 1px solid #99f;
       }

@@ -55,6 +55,10 @@ export interface CollectedElement {
   ariaHidden: boolean;
   /** Raw `data-gp-ignore` attribute value if present (suppression, Day 3). */
   gpIgnore: string | null;
+  /** Raw inline `style` attribute value if present (source-hint branch 3). */
+  styleAttr: string | null;
+  /** outerHTML head of the element, truncated to 120 chars (§6 snippet). */
+  snippet: string;
 }
 
 export interface CollectionResult {
@@ -235,6 +239,11 @@ export async function collectGeometry(
             siblingIndex,
             ariaHidden: el.getAttribute("aria-hidden") === "true",
             gpIgnore: el.getAttribute("data-gp-ignore"),
+            styleAttr: el.getAttribute("style"),
+            snippet: (() => {
+              const oh = el.outerHTML;
+              return oh.length > 120 ? oh.slice(0, 120) : oh;
+            })(),
           });
         }
 

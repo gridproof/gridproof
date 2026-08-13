@@ -60,3 +60,20 @@ export const TAILWIND_SPACING_PX: Readonly<Record<string, number>> = {
   "80": 320,
   "96": 384,
 };
+
+/** Sorted, de-duplicated px values of the Tailwind spacing scale. */
+export const TAILWIND_SPACING_SCALE_PX: readonly number[] = [
+  ...new Set(Object.values(TAILWIND_SPACING_PX)),
+].sort((a, b) => a - b);
+
+/**
+ * Reverse map px → canonical Tailwind class key (e.g. 12 → "3", 2 → "0.5").
+ * First key wins if two keys share a px value (none do in the standard scale).
+ */
+export const PX_TO_TAILWIND_KEY: ReadonlyMap<number, string> = (() => {
+  const m = new Map<number, string>();
+  for (const [key, px] of Object.entries(TAILWIND_SPACING_PX)) {
+    if (!m.has(px)) m.set(px, key);
+  }
+  return m;
+})();

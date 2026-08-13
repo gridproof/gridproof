@@ -4,6 +4,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerAuditTool } from "./tools/audit.js";
 import { registerCheckElementTool } from "./tools/check-element.js";
 import { registerConfigTool } from "./tools/config.js";
+import { registry } from "./engine/rule.js";
+import { registerDefaultRules } from "./engine/rules/register.js";
 import { shutdownRenderer } from "./engine/renderer.js";
 
 /**
@@ -21,6 +23,9 @@ async function main(): Promise<void> {
     name: PACKAGE_NAME,
     version: PACKAGE_VERSION,
   });
+
+  // Populate the rule registry before any audit runs.
+  registerDefaultRules(registry);
 
   registerAuditTool(server);
   registerCheckElementTool(server);

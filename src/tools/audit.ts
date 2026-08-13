@@ -1,16 +1,19 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { loadConfig } from "../config/loader.js";
 import { ruleIdSchema } from "../config/schema.js";
 import { collectGeometry } from "../engine/collector.js";
 import { RenderError, withRenderedPage } from "../engine/renderer.js";
+import { registry } from "../engine/rule.js";
+import { runAudit } from "../engine/runner.js";
 
 /**
- * gp_audit (spec §5.1) — primary tool.
+ * gp_audit (spec §5.1) — primary tool. Renders the URL, collects geometry in a
+ * single in-page pass, runs the enabled rules, and returns an AuditReport (§6)
+ * as `structuredContent` plus a short text summary.
  *
- * Day 1: RAW-GEOMETRY MODE. Renders the URL, collects computed geometry in a
- * single in-page pass, and returns it as `structuredContent` plus a short text
- * summary. No rules run — the rule engine registry is empty by design today.
- * The `rules` input is accepted and echoed but not yet applied.
+ * Day 2: spacing-scale and arbitrary-value are live; gap-consistency and
+ * canonical-size are not yet registered (no-op).
  */
 
 const viewportSchema = z
@@ -52,9 +55,9 @@ export function registerAuditTool(server: McpServer): void {
     {
       title: "Gridproof: audit a URL",
       description:
-        "Render a running frontend and audit its spacing/grid geometry. " +
-        "Day 1: returns RAW collected geometry (selector, tag, classes, rect, " +
-        "computed spacing/size) as structuredContent — no rule findings yet.",
+        "Render a running frontend and audit its spacing/grid geometry against " +
+        "the spacing-scale and arbitrary-value rules. Returns a structured " +
+        "AuditReport (violations with fix hints) plus a text summary.",
       inputSchema: auditInputShape,
       annotations: {
         readOnlyHint: true,
@@ -64,13 +67,13 @@ export function registerAuditTool(server: McpServer): void {
     },
     async (args: AuditInput) => {
       try {
-        const result = await withRenderedPage(
+        const collection = await withRenderedPage(
           args.url,
           args.viewport,
           (page) => collectGeometry(page, { selector: args.selector }),
         );
 
-        if (!result.rootFound) {
+        if (!collection.rootFound) {
           const sel = args.selector ?? "body";
           return {
             content: [
@@ -83,37 +86,41 @@ export function registerAuditTool(server: McpServer): void {
           };
         }
 
-        const notes: string[] = [];
-        if (result.capped) {
-          notes.push(
-            `Element cap of ${result.cap} reached; collection stopped early. Narrow with the "selector" input for full coverage.`,
+        const { config } = await loadConfig();
+        const report = runAudit({
+          url: args.url,
+          viewport: args.viewport,
+          elements: collection.elements,
+          config,
+          registry,
+          rules: args.rules,
+          maxViolations: args.maxViolations,
+        });
+
+        const extra: string[] = [];
+        if (collection.capped) {
+          extra.push(
+            `Element cap of ${collection.cap} reached during collection; narrow with "selector" for full coverage.`,
+          );
+        }
+        if (report.truncated) {
+          extra.push(
+            `Showing worst ${report.violations.length} of ${report.summary.total}; raise "maxViolations" to see more.`,
           );
         }
 
-        const structuredContent = {
-          mode: "raw-geometry" as const,
-          url: args.url,
-          viewport: args.viewport,
-          timestamp: new Date().toISOString(),
-          rootSelector: args.selector ?? "body",
-          rulesRequested: args.rules ?? null,
-          rulesApplied: [] as string[], // none in Day 1
-          count: result.count,
-          capped: result.capped,
-          cap: result.cap,
-          notes,
-          elements: result.elements,
-        };
-
+        const s = report.summary;
         const summary =
-          `gp_audit (raw geometry): collected ${result.count} element(s) from ` +
-          `${structuredContent.rootSelector} at ${args.viewport.width}×${args.viewport.height} on ${args.url}. ` +
-          `No rules run yet (Day 1 raw mode).` +
-          (notes.length > 0 ? ` ${notes.join(" ")}` : "");
+          `gp_audit: ${s.total} violation(s) (${s.errors} error, ${s.warns} warn) ` +
+          `on ${args.url} at ${args.viewport.width}×${args.viewport.height}. ` +
+          `byRule: ${Object.entries(s.byRule)
+            .map(([r, n]) => `${r}=${n}`)
+            .join(", ") || "none"}.` +
+          (extra.length > 0 ? ` ${extra.join(" ")}` : "");
 
         return {
           content: [{ type: "text" as const, text: summary }],
-          structuredContent,
+          structuredContent: report,
         };
       } catch (err) {
         if (err instanceof RenderError) {
@@ -124,9 +131,7 @@ export function registerAuditTool(server: McpServer): void {
         }
         const msg = err instanceof Error ? err.message : String(err);
         return {
-          content: [
-            { type: "text" as const, text: `gp_audit failed: ${msg}` },
-          ],
+          content: [{ type: "text" as const, text: `gp_audit failed: ${msg}` }],
           isError: true,
         };
       }
