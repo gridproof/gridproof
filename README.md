@@ -109,6 +109,19 @@ npm test        # vitest (unit + Playwright integration)
 npm run dev     # run the server from TypeScript (tsx)
 ```
 
+### Pre-push author guard (maintainers)
+
+`.git/hooks/` isn't version-controlled, so after a fresh clone install the
+pre-push guard (blocks a push unless commits are authored `gridproofdev@gmail.com`
+and the active `gh` account is `gridproof`):
+
+```bash
+ln -sf ../../scripts/pre-push-guard.sh .git/hooks/pre-push
+# or, if symlinks aren't an option:
+#   printf '#!/usr/bin/env bash\nexec "$(git rev-parse --show-toplevel)/scripts/pre-push-guard.sh" "$@"\n' > .git/hooks/pre-push
+chmod +x .git/hooks/pre-push scripts/pre-push-guard.sh
+```
+
 ## License
 
 MIT
