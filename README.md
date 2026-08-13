@@ -1,5 +1,8 @@
 # Gridproof
 
+[![npm version](https://img.shields.io/npm/v/gridproof.svg)](https://www.npmjs.com/package/gridproof)
+[![license](https://img.shields.io/npm/l/gridproof.svg)](./LICENSE)
+
 **Gridproof your UI — automated spacing & grid QA in the agent loop.**
 
 Gridproof is an [MCP](https://modelcontextprotocol.io) server that renders your
@@ -20,7 +23,7 @@ because nothing in the agent loop checks for it. Gridproof is that check.
 
 ## The loop
 
-```
+```text
 agent generates UI → gp_audit(url) → JSON violations with fix hints
 → agent edits source → gp_audit(url) → clean report = done
 ```
@@ -73,17 +76,12 @@ Four rules. All report `warn` by default — nothing blocks, nothing has
 exit-code semantics. **Suggest, don't forbid**; the one exception is tap
 targets, which error because it's an accessibility floor, not a style opinion.
 
-- **`spacing-scale`** — computed margin/padding/gap that isn't a multiple of
-  the base unit (default 4px) and isn't an allowed value. Carries the nearest
-  valid value.
-- **`arbitrary-value`** — off-scale arbitrary Tailwind classes (`p-[13px]` →
-  suggests `p-3`).
-- **`gap-consistency`** — siblings in a flex/grid container spaced
-  inconsistently when `gap` isn't set → suggests unifying via `gap` on the
-  container instead of per-child margins.
-- **`canonical-size`** — icon/interactive-element sizes off the canonical
-  scale, and interactive elements below the tap-target minimum (**error**,
-  [WCAG 2.5.8](https://www.w3.org/WAI/WCAG21/Understanding/target-size-minimum.html)).
+| Rule | Detects | Severity | Example fix |
+|------|---------|----------|-------------|
+| `spacing-scale` | Computed margin/padding/gap that isn't a multiple of the base unit (default 4px) and isn't an allowed value | warn | Snaps to the nearest valid value |
+| `arbitrary-value` | Off-scale arbitrary Tailwind classes | warn | `py-[13px]` → `py-3` |
+| `gap-consistency` | Siblings in a flex/grid container spaced inconsistently when `gap` isn't set | warn | Set `gap-4` on the container instead of per-child margins |
+| `canonical-size` | Icon/interactive-element sizes off the canonical scale, and interactive elements below the tap-target minimum | warn (icons) / **error** (tap targets) | Snap to canonical size; [WCAG 2.5.8](https://www.w3.org/WAI/WCAG21/Understanding/target-size-minimum.html) |
 
 ## Tailwind, and non-Tailwind pages
 
