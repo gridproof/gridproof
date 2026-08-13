@@ -55,6 +55,7 @@ afterAll(async () => {
 async function auditFixture(
   name: string,
   viewport: { width: number; height: number } = { width: 1440, height: 900 },
+  config = DEFAULT_CONFIG,
 ): Promise<AuditReport> {
   const collection = await withRenderedPage(
     `${base}/${name}`,
@@ -65,9 +66,10 @@ async function auditFixture(
     url: `${base}/${name}`,
     viewport,
     elements: collection.elements,
-    config: DEFAULT_CONFIG,
+    config,
     registry,
     maxViolations: 50,
+    isTailwind: collection.isTailwind, // exercise the Tailwind-detection gate
   });
 }
 
@@ -100,6 +102,69 @@ describe("integration: clean.html", () => {
     const report = await auditFixture("clean.html");
     expect(report.summary.total).toBe(0);
     expect(report.violations).toHaveLength(0);
+  });
+});
+
+describe("integration: icon detection (icon-detect.html)", () => {
+  async function flags(name: string) {
+    const c = await withRenderedPage(
+      `${base}/${name}`,
+      { width: 1440, height: 900 },
+      (page) => collectGeometry(page),
+    );
+    const by = new Map(c.elements.map((e) => [e.selector, e]));
+    return by;
+  }
+
+  it("token-matches 'icon' and never treats tap targets / substrings as icons", async () => {
+    const by = await flags("icon-detect.html");
+    // substring "muicontainer" → NOT an icon
+    expect(by.get("#mui")?.isIcon).toBe(false);
+    // "nav-icon" token → IS an icon
+    expect(by.get("#navicon")?.isIcon).toBe(true);
+    // bracketed Tailwind variant + tap target → NOT an icon
+    expect(by.get("#iconvariant")?.isIcon).toBe(false);
+    expect(by.get("#iconvariant")?.isTapTarget).toBe(true);
+    // button with icon-ish class → tap target, NOT an icon
+    expect(by.get("#btnicon")?.isIcon).toBe(false);
+    expect(by.get("#btnicon")?.isTapTarget).toBe(true);
+  });
+});
+
+describe("integration: Tailwind-detection gate (plain-css.html)", () => {
+  it("non-Tailwind page: spacing/arbitrary silent, canonical still runs", async () => {
+    // mobile so the tap-target (accessibility) finding is emitted
+    const report = await auditFixture("plain-css.html", {
+      width: 375,
+      height: 812,
+    });
+    expect(report.isTailwind).toBe(false);
+    expect(report.notes.join(" ")).toContain("Non-Tailwind");
+    // .panel has 13px padding but spacing-scale is gated → not flagged
+    expect(
+      report.violations.some((v) => v.ruleId === "spacing-scale"),
+    ).toBe(false);
+    expect(
+      report.violations.some((v) => v.ruleId === "arbitrary-value"),
+    ).toBe(false);
+    // canonical-size still runs: 32px button is a tap-target error
+    const tap = report.violations.find((v) => v.selector === "#tap-bad");
+    expect(tap?.ruleId).toBe("canonical-size");
+    expect(tap?.severity).toBe("error");
+  });
+
+  it("assumeTailwind:true forces spacing rules on the non-Tailwind page", async () => {
+    const report = await auditFixture(
+      "plain-css.html",
+      { width: 1440, height: 900 },
+      { ...DEFAULT_CONFIG, assumeTailwind: true },
+    );
+    // now the 13px padding on #panel is flagged
+    expect(
+      report.violations.some(
+        (v) => v.ruleId === "spacing-scale" && v.selector === "#panel",
+      ),
+    ).toBe(true);
   });
 });
 

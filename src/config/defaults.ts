@@ -12,6 +12,8 @@ export const DEFAULT_CONFIG: GridproofConfig = {
   canonicalSizes: [12, 14, 16, 20, 24, 32, 40, 48],
   minTapTarget: 44,
   tapTargetBreakpoint: 768,
+  minIconSize: 10,
+  assumeTailwind: "auto",
   rules: {
     "spacing-scale": "warn",
     "arbitrary-value": "warn",

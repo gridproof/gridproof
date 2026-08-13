@@ -42,6 +42,24 @@ describe("canonical-size icons", () => {
     expect(v[0]?.severity).toBe("warn");
     expect(v[0]?.expected).toBe("32px");
   });
+
+  it("subpixel icon 24.5px is within tolerance of 24 → 0 violations", () => {
+    expect(
+      run(makeElement({ isIcon: true, rect: { width: 24.5, height: 24.5 } })),
+    ).toHaveLength(0);
+  });
+
+  it("subpixel icon 11.5px is within tolerance of 12 → 0 violations", () => {
+    expect(
+      run(makeElement({ isIcon: true, rect: { width: 11.5, height: 11.5 } })),
+    ).toHaveLength(0);
+  });
+
+  it("tiny 6px sprite is below the icon floor → 0 violations", () => {
+    expect(
+      run(makeElement({ isIcon: true, rect: { width: 6, height: 6 } })),
+    ).toHaveLength(0);
+  });
 });
 
 describe("canonical-size tap targets", () => {

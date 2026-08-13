@@ -89,6 +89,7 @@ export async function runCheckElement(
     config,
     registry,
     maxViolations: CHECK_MAX_VIOLATIONS,
+    isTailwind: collection.isTailwind,
   });
 
   return { ok: true, report };

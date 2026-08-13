@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Gridproof fixture — icon detection</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      .box {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background: #ccc;
+        border: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- "muicontainer" contains the substring "icon" (mu-ICON-tainer) but NOT as
+         a delimited token → must NOT be an icon. -->
+    <span id="mui" class="muicontainer box"></span>
+    <!-- "nav-icon" has "icon" as a hyphen-delimited token → IS an icon. -->
+    <span id="navicon" class="nav-icon box"></span>
+    <!-- Tailwind variant fragment with brackets → must NOT be an icon; also it's
+         a tap target (a[href], non-inline) → tap target wins. -->
+    <a id="iconvariant" href="#" class="has-data-[icon=inline-end]:pr-1.5 box">x</a>
+    <!-- A button with an icon-ish class → tap target, NOT an icon. -->
+    <button id="btnicon" class="icon-button box">x</button>
+  </body>
+</html>

@@ -39,11 +39,20 @@ const GAP_PROPS: ReadonlyArray<readonly [keyof CollectedComputed, string]> = [
   ["columnGap", "column-gap"],
 ];
 
+/**
+ * Parse a concrete positive px value. Rejects messy subpixel values that don't
+ * land on the 0.5px device grid (e.g. 25.781px, 7.369px from rem-with-nonstandard
+ * -root / % / transforms) — those are computed layout artifacts, not authored
+ * spacing (spec §7.2 intent).
+ */
 function parseConcretePx(value: string): number | null {
   const m = /^(\d+(?:\.\d+)?)px$/.exec(value.trim());
   if (m === null) return null;
   const n = Number.parseFloat(m[1] as string);
-  return n > 0 ? n : null;
+  if (n <= 0) return null;
+  const nearestHalf = Math.round(n * 2) / 2;
+  if (Math.abs(n - nearestHalf) >= 0.12) return null; // subpixel noise → skip
+  return n;
 }
 
 function pxStr(n: number): string {

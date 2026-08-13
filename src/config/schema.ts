@@ -54,6 +54,14 @@ export const gridproofConfigSchema = z.object({
    * viewport is narrower than this (default 768 = the mobile breakpoint).
    */
   tapTargetBreakpoint: z.number().positive(),
+  /** Minimum rendered box (px) for an element to count as an icon (default 10). */
+  minIconSize: z.number().positive(),
+  /**
+   * Whether to run the Tailwind-specific rules (spacing-scale, arbitrary-value).
+   * "auto" (default) = detect Tailwind on the page; true = always run;
+   * false = always skip them (accessibility rules still run).
+   */
+  assumeTailwind: z.union([z.literal("auto"), z.boolean()]),
   rules: ruleSeverityMapSchema,
   suppress: z.array(suppressionSchema),
 });

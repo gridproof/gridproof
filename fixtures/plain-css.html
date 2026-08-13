@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — plain CSS (non-Tailwind)</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: Georgia, "Times New Roman", serif;
+      }
+      /* Off-scale padding (13px): a Tailwind page would get this flagged, but on
+         a non-Tailwind page the spacing rules are gated. */
+      .panel {
+        padding: 13px;
+        border: 1px solid #ccc;
+        margin-bottom: 16px;
+      }
+      /* 32px button — a framework-agnostic accessibility issue (tap target). */
+      .btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #557;
+        background: #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 0 0 16px">Plain CSS (non-Tailwind) fixture</h1>
+    <div class="panel" id="panel">
+      13px padding — off-scale, but spacing rules are gated on non-Tailwind pages.
+    </div>
+    <button class="btn" id="tap-bad" data-testid="tap-bad">x</button>
+  </body>
+</html>

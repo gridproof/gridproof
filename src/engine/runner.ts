@@ -26,17 +26,44 @@ export interface RunAuditParams {
   /** Subset of rules to run; default all registered. Unknown ids are skipped. */
   rules?: readonly RuleId[] | undefined;
   maxViolations: number;
+  /** Whether the page uses Tailwind (from the collector's detection). */
+  isTailwind?: boolean;
 }
 
 function severityRank(s: Violation["severity"]): number {
   return s === "error" ? 0 : 1;
 }
 
+/** Rules that only make sense on Tailwind pages (gated when non-Tailwind). */
+const TAILWIND_ONLY_RULES: ReadonlySet<RuleId> = new Set([
+  "spacing-scale",
+  "arbitrary-value",
+]);
+
 export function runAudit(params: RunAuditParams): AuditReport {
   const { url, viewport, elements, config, registry, rules, maxViolations } =
     params;
 
-  const selected = rules ? registry.select(rules) : registry.all();
+  // Tailwind-detection gate: "auto" defers to the collector's detection; true
+  // always runs the Tailwind rules; false always skips them.
+  const detected = params.isTailwind ?? true;
+  const runTailwindRules =
+    config.assumeTailwind === true
+      ? true
+      : config.assumeTailwind === false
+        ? false
+        : detected;
+
+  const notes: string[] = [];
+  let selected = rules ? registry.select(rules) : registry.all();
+  if (!runTailwindRules) {
+    selected = selected.filter((r) => !TAILWIND_ONLY_RULES.has(r.id));
+    notes.push(
+      config.assumeTailwind === false
+        ? "Tailwind rules disabled by config (assumeTailwind:false); spacing/arbitrary rules skipped. Accessibility rules (canonical-size) still applied."
+        : "Non-Tailwind page detected; spacing/arbitrary rules skipped. Accessibility rules (canonical-size) still applied.",
+    );
+  }
 
   const ctx = { config, elements, viewport };
   const produced: Violation[] = [];
@@ -115,5 +142,7 @@ export function runAudit(params: RunAuditParams): AuditReport {
     violations,
     truncated,
     suppressedCount,
+    isTailwind: detected,
+    notes,
   };
 }

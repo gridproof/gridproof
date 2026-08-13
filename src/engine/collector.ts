@@ -84,6 +84,8 @@ export interface CollectionResult {
   capped: boolean;
   /** The cap that was applied. */
   cap: number;
+  /** Whether the page uses Tailwind (distinctive-signal heuristic, page-level). */
+  isTailwind: boolean;
   elements: CollectedElement[];
 }
 
@@ -115,9 +117,46 @@ export async function collectGeometry(
     ({ rootSelector, cap, suppressSelectors }): CollectionResult => {
       const round05 = (n: number): number => Math.round(n * 2) / 2;
 
+      // Page-level Tailwind detection using DISTINCTIVE signals (variant colons,
+      // arbitrary [..] values, bare flex/grid, color-shade utilities). Chosen to
+      // avoid a Bootstrap false-positive (Bootstrap shares p-*/m-*/w-* names but
+      // uses no `:` variants, no `[..]`, `d-flex` not `flex`, `w-100` not shades).
+      const detectTailwind = (): boolean => {
+        const SIGNALS: RegExp[] = [
+          /-\[[^\]]+\]/,
+          /^(?:sm|md|lg|xl|2xl):/,
+          /^(?:hover|focus|active|group-hover|focus-visible|disabled|dark):/,
+          /^(?:flex|grid|inline-flex|inline-grid)$/,
+          /^(?:space|gap)-[xy]?-?\d/,
+          /^(?:bg|text|border|ring|fill|stroke|from|via|to)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}$/,
+          /^rounded-(?:sm|md|lg|xl|2xl|3xl|full)$/,
+          /^shadow-(?:sm|md|lg|xl|2xl|inner)$/,
+        ];
+        let hits = 0;
+        const nodes = document.querySelectorAll("[class]");
+        const limit = Math.min(nodes.length, 2000);
+        for (let i = 0; i < limit; i++) {
+          for (const c of Array.from((nodes[i] as Element).classList)) {
+            if (SIGNALS.some((re) => re.test(c))) {
+              hits++;
+              if (hits >= 8) return true;
+            }
+          }
+        }
+        return hits >= 8;
+      };
+      const isTailwind = detectTailwind();
+
       const root: Element | null = document.querySelector(rootSelector);
       if (root === null) {
-        return { rootFound: false, count: 0, capped: false, cap, elements: [] };
+        return {
+          rootFound: false,
+          count: 0,
+          capped: false,
+          cap,
+          isTailwind,
+          elements: [],
+        };
       }
 
       const esc = (s: string): string =>
@@ -252,22 +291,32 @@ export async function collectGeometry(
       };
 
       /**
-       * An icon for canonical-size (v1.2, spec §7.3): a class /icon/i element;
-       * an svg with an icon-sized box (≤48px) or inside a button/link; or an img
-       * ONLY when inside a button/link. Standalone imgs (logos, media) and
-       * large/hero SVGs (≥64px) are NOT icons.
+       * "icon" as a whole class token (hyphen/underscore-delimited), NOT a
+       * substring. Matches `icon`, `nav-icon`, `icon-lg`; rejects `MuiContainer`
+       * ("muicontainer") and Tailwind variant fragments like
+       * `has-data-[icon=inline-end]:pr-1.5` (contains `[`/`:`).
        */
-      const isIconEl = (el: Element, maxDim: number): boolean => {
-        if (Array.from(el.classList).some((c) => /icon/i.test(c))) return true;
+      const hasIconClass = (el: Element): boolean =>
+        Array.from(el.classList).some((c) => {
+          if (/[[\]:()]/.test(c)) return false; // Tailwind variant/arbitrary/pseudo
+          const segs = c.toLowerCase().split(/[-_]/);
+          return segs.includes("icon") || segs.includes("icons");
+        });
+
+      /**
+       * An icon for canonical-size (v1.3): a small (<64px) element that is an
+       * icon by class token, a standalone/interactive small svg, or an img
+       * inside a button/link. Tap targets are NEVER icons (closes the
+       * desktop-exemption bypass). The lower size floor is applied by the rule.
+       */
+      const isIconEl = (el: Element, maxDim: number, isTap: boolean): boolean => {
+        if (isTap) return false;
+        if (maxDim <= 0 || maxDim >= 64) return false; // decorative / hero / container
+        if (hasIconClass(el)) return true;
         const tag = el.tagName.toLowerCase();
-        if (tag !== "svg" && tag !== "img") return false;
-        if (maxDim >= 64) return false; // decorative / illustration / logo / badge
-        const inInteractive = el.closest("button, a[href]") !== null;
-        // img is an icon only when small AND inside a button/link; a small svg
-        // qualifies standalone.
-        if (tag === "img") return inInteractive && maxDim > 0;
-        const small = maxDim > 0 && maxDim <= 48;
-        return inInteractive || small;
+        if (tag === "img") return el.closest("button, a[href]") !== null;
+        if (tag !== "svg") return false;
+        return maxDim <= 48 || el.closest("button, a[href]") !== null;
       };
 
       const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "HEAD", "META", "LINK", "TITLE"]);
@@ -378,7 +427,10 @@ export async function collectGeometry(
             gpIgnore: el.getAttribute("data-gp-ignore"),
             ignore: computeIgnore(el),
             isTapTarget: isTapTargetEl(el),
-            isIcon: isIconEl(el, maxDim),
+            isIcon: (() => {
+              const isTap = isTapTargetEl(el);
+              return isIconEl(el, maxDim, isTap);
+            })(),
             autoMarginX,
             styleAttr: el.getAttribute("style"),
             snippet: (() => {
@@ -395,7 +447,14 @@ export async function collectGeometry(
         }
       }
 
-      return { rootFound: true, count: elements.length, capped, cap, elements };
+      return {
+        rootFound: true,
+        count: elements.length,
+        capped,
+        cap,
+        isTailwind,
+        elements,
+      };
     },
     { rootSelector, cap, suppressSelectors },
   );

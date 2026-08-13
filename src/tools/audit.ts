@@ -111,9 +111,10 @@ export function registerAuditTool(server: McpServer): void {
           registry,
           rules: args.rules,
           maxViolations: args.maxViolations,
+          isTailwind: collection.isTailwind,
         });
 
-        const extra: string[] = [];
+        const extra: string[] = [...report.notes];
         if (collection.capped) {
           extra.push(
             `Element cap of ${collection.cap} reached during collection; narrow with "selector" for full coverage.`,

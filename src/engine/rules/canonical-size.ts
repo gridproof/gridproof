@@ -1,16 +1,18 @@
 import type { Violation } from "../../report/schema.js";
-import { nearestInScale } from "../../util/nearest.js";
-import type { CollectedElement } from "../collector.js";
+import { isNearAny, nearestInScale } from "../../util/nearest.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
- * canonical-size (spec §7.3).
- *  - Icons (svg, img inside button/link, class /icon/i): width & height must be
- *    in `canonicalSizes`; else `warn`, snap to the nearest canonical size.
- *  - Interactive elements (button, a[href], input, [role=button]):
- *    min(width, height) ≥ `minTapTarget` (44); else `error` — the only
- *    default-error rule — with a WCAG 2.5.8 note.
+ * canonical-size (spec §7.3, v1.3).
+ *  - Icons: a rendered box must be near a canonical size (0.6px tolerance, so
+ *    subpixel sizes like 24.5px are not flagged). Icons below `minIconSize`
+ *    (default 10) are decorative sprites/glyphs and are skipped. Tap targets are
+ *    never treated as icons (handled in the collector).
+ *  - Interactive tap targets (mobile viewports only): min(width, height) ≥
+ *    `minTapTarget` (44) else `error` with a WCAG 2.5.8 note.
  */
+
+const TOLERANCE = 0.6;
 
 function pxStr(n: number): string {
   return `${Number.isInteger(n) ? n : Number(n.toFixed(1))}px`;
@@ -19,26 +21,31 @@ function pxStr(n: number): string {
 export const canonicalSizeRule: Rule = {
   id: "canonical-size",
   check(ctx: RuleContext): Violation[] {
-    const { canonicalSizes, minTapTarget, tapTargetBreakpoint } = ctx.config;
-    // Interactive tap-target severity follows config (default "error").
+    const { canonicalSizes, minTapTarget, tapTargetBreakpoint, minIconSize } =
+      ctx.config;
     const interactiveSeverity = ctx.config.rules["canonical-size"] ?? "error";
     const violations: Violation[] = [];
 
-    const canonicalSet = new Set(canonicalSizes);
+    // Off-canonical iff at/above the icon floor AND not within tolerance of ANY
+    // canonical size. The floor is applied per-dimension so a thin icon's small
+    // side (e.g. a 6×20 chevron) isn't flagged; the tolerance absorbs subpixel
+    // rendering (24.5 ≈ 24, 11.5 ≈ 12).
+    const offCanonical = (v: number): boolean =>
+      v >= minIconSize && !isNearAny(v, canonicalSizes, TOLERANCE);
 
-    // WCAG 2.5.8 (44px) is a TOUCH-target criterion — irrelevant for desktop
-    // pointer nav. Only apply tap-target checks below the mobile breakpoint.
-    // Icon-canonical checks run at every viewport.
+    // WCAG 2.5.8 (44px) is a TOUCH criterion — irrelevant for desktop pointer
+    // nav. Tap-target checks run only below the mobile breakpoint; icon checks
+    // run at every viewport.
     const checkTapTargets = ctx.viewport.width < tapTargetBreakpoint;
 
     for (const el of ctx.elements) {
       const w = el.rect.width;
       const h = el.rect.height;
 
-      // Icons — dimensions must be canonical.
-      if (el.isIcon && (w > 0 || h > 0)) {
-        const wOff = w > 0 && !canonicalSet.has(w);
-        const hOff = h > 0 && !canonicalSet.has(h);
+      // Icons — dimensions must be near-canonical (per-dimension floor applied).
+      if (el.isIcon) {
+        const wOff = offCanonical(w);
+        const hOff = offCanonical(h);
         if (wOff || hOff) {
           const collapse = wOff && hOff && w === h;
           const primary = wOff ? w : h;

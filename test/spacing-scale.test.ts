@@ -110,6 +110,16 @@ describe("spacing-scale core", () => {
     ).toHaveLength(0);
   });
 
+  it("ignores messy subpixel computed values (25.781px, 7.369px)", () => {
+    expect(
+      run(
+        makeElement({
+          computed: { marginRight: "25.781px", paddingLeft: "7.369px" },
+        }),
+      ),
+    ).toHaveLength(0);
+  });
+
   it("passes allowedValues (1px, 2px hairlines)", () => {
     expect(
       run(

@@ -86,22 +86,16 @@ describe("arbitrary-value rule", () => {
     expect(v[0]?.expected).toBe("16px");
   });
 
-  // v1.2: sizes are deliberate. An off-GRID size warns as "off-grid dimension"
-  // with NO size-changing class suggestion (was: → w-80).
-  it("off-grid width w-[347px] → off-grid note, never a resizing class", () => {
-    const v = run([el("#arb-width", ["w-[347px]"])]);
-    expect(v).toHaveLength(1);
-    expect(v[0]?.fixHint.kind).toBe("manual");
-    expect(v[0]?.fixHint.to).toBeUndefined();
-    expect(v[0]?.fixHint.note ?? "").toContain("off-grid");
+  // v1.3: SIZE props are entirely out of scope — a concrete dimension is
+  // deliberate, never drift (was: w-[347px] → off-grid note in v1.2).
+  it("off-grid width w-[347px] → 0 violations (sizes not judged)", () => {
+    expect(run([el("#arb-width", ["w-[347px]"])])).toHaveLength(0);
   });
-
-  // v1.2: an on-grid size (÷baseUnit) is a deliberate dimension → NOT flagged.
-  it("on-grid width w-[200px] → 0 violations", () => {
-    expect(run([el("#arb-w200", ["w-[200px]"])])).toHaveLength(0);
-  });
-  it("on-grid height h-[60px] → 0 violations", () => {
-    expect(run([el("#arb-h60", ["h-[60px]"])])).toHaveLength(0);
+  it("w-[200px] / h-[62px] / max-w-[530px] / size-[18px] → 0 violations", () => {
+    expect(run([el("#a", ["w-[200px]"])])).toHaveLength(0);
+    expect(run([el("#b", ["h-[62px]"])])).toHaveLength(0);
+    expect(run([el("#c", ["max-w-[530px]"])])).toHaveLength(0);
+    expect(run([el("#d", ["size-[18px]"])])).toHaveLength(0);
   });
 
   // v1.2: border-radius is out of scope — never a rounded-7 / invalid class.

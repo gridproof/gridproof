@@ -4,29 +4,29 @@ import {
   TAILWIND_SPACING_SCALE_PX,
 } from "../../config/defaults.js";
 import type { Violation } from "../../report/schema.js";
-import { isNearAny, isOnGrid, nearestInScale, nearestMultiple } from "../../util/nearest.js";
+import { isNearAny, isOnGrid, nearestInScale } from "../../util/nearest.js";
 import type { Rule, RuleContext } from "../rule.js";
 
 /**
- * arbitrary-value (spec §7.3, v1.2 — conservative). Reads `classList` for
- * Tailwind arbitrary classes, rem→px (×16), and flags only genuine drift:
- *  - SPACING props (m/p/gap/space/inset/top/right/bottom/left): off-grid AND
- *    off-scale → warn with the nearest Tailwind class; on a named step →
- *    quiet hygiene rename (same value); on-grid but unnamed → nothing.
- *  - SIZE props (w, h, size, min-w/max-w, min-h/max-h): a concrete dimension
- *    is deliberate. Only flag when off the baseUnit grid, and then only as an
- *    "off-grid dimension" note with NO size-changing class suggestion.
- *  - border-radius (`rounded-*`) is OUT of scope (not a spacing scale).
- * Never emits a fixHint.to that isn't a real Tailwind class.
+ * arbitrary-value (spec §7.3, v1.3 — SPACING only). Reads `classList` for
+ * Tailwind arbitrary SPACING classes (m/p/gap/space/inset/top/right/bottom/left),
+ * rem→px (×16), and flags only genuine drift:
+ *  - off-grid AND off-scale → warn with the nearest Tailwind class;
+ *  - on a named step → quiet hygiene rename (same value);
+ *  - on-grid but unnamed → nothing.
+ *
+ * SIZE props (w, h, size, min-w/max-w, min-h/max-h) are OUT of scope: a concrete
+ * dimension like `w-[350px]` or `h-[62px]` is a deliberate choice, never drift
+ * (generalization: the single biggest FP source, 458). border-radius is also out
+ * of scope. Never emits a fixHint.to that isn't a real Tailwind class.
  */
 
-/** Groups: 1=prefix, 2=number, 3=unit. Note: `rounded` intentionally excluded (v1.2). */
+/** Groups: 1=prefix, 2=number, 3=unit. SIZE + rounded prefixes intentionally excluded. */
 export const ARBITRARY_CLASS_RE =
-  /(?:^|:)(-?(?:min-[wh]|max-[wh]|[mp][trblxy]?|gap|space-[xy]|w|h|size|inset|top|right|bottom|left))-\[(\d+(?:\.\d+)?)(px|rem)\]/;
+  /(?:^|:)(-?(?:[mp][trblxy]?|gap|space-[xy]|inset|top|right|bottom|left))-\[(\d+(?:\.\d+)?)(px|rem)\]/;
 
 const SPACING_PREFIX_RE =
   /^-?(?:[mp][trblxy]?|gap|space-[xy]|inset|top|right|bottom|left)$/;
-const SIZE_PREFIX_RE = /^(?:min-[wh]|max-[wh]|w|h|size)$/;
 
 export interface ArbitraryMatch {
   /** The whole class token, e.g. `md:p-[13px]`. */
@@ -114,30 +114,10 @@ export const arbitraryValueRule: Rule = {
         const property = prefixToProperty(prefix);
         const px = match.px;
 
-        if (SIZE_PREFIX_RE.test(prefix)) {
-          // SIZE: a concrete dimension is deliberate. Only flag off-grid, and
-          // never suggest a class that would change the rendered size.
-          if (isOnGrid(px, baseUnit)) continue;
-          violations.push({
-            ruleId: "arbitrary-value",
-            severity,
-            selector: el.selector,
-            property,
-            actual: pxStr(px),
-            expected: `${pxStr(nearestMultiple(px, baseUnit))} (grid)`,
-            fixHint: {
-              kind: "manual",
-              from: token,
-              note: `off-grid dimension ${pxStr(px)}; align to the ${baseUnit}px grid (keep it arbitrary — no named class matches this size)`,
-            },
-            snippet: el.snippet,
-          });
-          continue;
-        }
+        // SIZE / rounded prefixes never reach here (excluded from the regex);
+        // guard anyway so only spacing is judged.
+        if (!SPACING_PREFIX_RE.test(prefix)) continue;
 
-        if (!SPACING_PREFIX_RE.test(prefix)) continue; // e.g. rounded → skip
-
-        // SPACING
         const onGrid = isOnGrid(px, baseUnit);
         const onScale = isNearAny(px, scale);
 

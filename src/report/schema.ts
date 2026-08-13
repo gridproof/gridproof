@@ -61,5 +61,9 @@ export const auditReportSchema = z.object({
   truncated: z.boolean(),
   /** how many findings were hidden by suppressions. */
   suppressedCount: z.number(),
+  /** Whether the page was detected/assumed to use Tailwind. */
+  isTailwind: z.boolean(),
+  /** Informational notes (e.g. rules skipped on a non-Tailwind page). */
+  notes: z.array(z.string()),
 });
 export type AuditReport = z.infer<typeof auditReportSchema>;
