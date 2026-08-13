@@ -1,6 +1,6 @@
 {
   "name": "gridproof",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Gridproof your UI — automated spacing & grid QA in the agent loop (MCP server).",
   "type": "module",
   "bin": {
