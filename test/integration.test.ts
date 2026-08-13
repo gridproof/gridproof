@@ -9,6 +9,7 @@ import { withRenderedPage, shutdownRenderer } from "../src/engine/renderer.js";
 import { registry } from "../src/engine/rule.js";
 import { registerDefaultRules } from "../src/engine/rules/register.js";
 import { runAudit } from "../src/engine/runner.js";
+import { runCheckElement } from "../src/tools/check-element.js";
 import type { AuditReport } from "../src/report/schema.js";
 
 /**
@@ -118,6 +119,59 @@ describe("integration: gap-consistency (gaps.html)", () => {
     expect(gaps).toHaveLength(1);
     expect(gaps[0]?.selector).toBe("#ragged-list");
     expect(gaps[0]?.fixHint.kind).toBe("container-gap");
+  });
+});
+
+describe("integration: gp_check_element (scoped re-check)", () => {
+  it("returns the violation when scoped to the dirty element", async () => {
+    const res = await runCheckElement({
+      url: `${base}/off-scale.html`,
+      selector: "#off-scale-box",
+      viewport: { width: 1440, height: 900 },
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    const spacing = res.report.violations.filter(
+      (v) => v.ruleId === "spacing-scale",
+    );
+    expect(spacing).toHaveLength(1);
+    expect(spacing[0]?.selector).toBe("#off-scale-box");
+    expect(spacing[0]?.expected).toBe("12px");
+  });
+
+  it("reports clean for a fixed element (0 violations)", async () => {
+    const res = await runCheckElement({
+      url: `${base}/off-scale.html`,
+      selector: "#clean-box",
+      viewport: { width: 1440, height: 900 },
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.report.summary.total).toBe(0);
+  });
+
+  it("errors actionably when the selector matches nothing", async () => {
+    const res = await runCheckElement({
+      url: `${base}/off-scale.html`,
+      selector: "#does-not-exist",
+      viewport: { width: 1440, height: 900 },
+    });
+    expect(res.ok).toBe(false);
+    if (res.ok) return;
+    expect(res.message).toContain("matched no element");
+  });
+
+  it("scopes to the container for gap-consistency", async () => {
+    const res = await runCheckElement({
+      url: `${base}/gaps.html`,
+      selector: "#ragged-list",
+      viewport: { width: 1440, height: 900 },
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(
+      res.report.violations.some((v) => v.ruleId === "gap-consistency"),
+    ).toBe(true);
   });
 });
 
