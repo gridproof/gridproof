@@ -15,7 +15,7 @@
 }
 * { box-sizing:border-box; }
 html,body { margin:0; }
-body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14.5px; line-height:1.5; -webkit-font-smoothing:antialiased; }
 .wrap { max-width:960px; margin:0 auto; padding:0 28px 72px; }
 
 .header { position:relative; margin:0 -28px 30px; padding:26px 28px 22px; border-bottom:1px solid var(--line); overflow:hidden;
@@ -24,17 +24,17 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); font-si
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size:26px 26px; }
 .brandline { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; }
-.logo { font-family:var(--mono); font-weight:600; font-size:13px; letter-spacing:0.01em; color:var(--muted); }
+.logo { font-family:var(--mono); font-weight:600; font-size:13.5px; letter-spacing:0.01em; color:var(--muted); }
 .logo b { color:var(--text); }
-.stamp { font-family:var(--mono); font-size:11px; color:var(--faint); }
+.stamp { font-family:var(--mono); font-size:12px; color:var(--faint); }
 
 /* Hero verdict — the single focal point */
 .hero { display:flex; align-items:center; gap:20px; }
 .big { font-family:var(--mono); font-size:64px; font-weight:700; line-height:0.9; letter-spacing:-0.03em; }
 .big.error { color:var(--error); } .big.warn { color:var(--warn); } .big.info { color:var(--info); } .big.ok { color:var(--ok); }
-.headline { font-size:17px; font-weight:600; letter-spacing:-0.01em; }
+.headline { font-size:17.5px; font-weight:600; letter-spacing:-0.01em; }
 .headline.error { color:var(--error); } .headline.warn { color:var(--warn); } .headline.info { color:var(--info); } .headline.ok { color:var(--ok); }
-.legend { margin-top:5px; font-size:12px; color:var(--muted); display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.legend { margin-top:5px; font-size:12.5px; color:var(--muted); display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
 .legend .lg { display:inline-flex; align-items:center; gap:5px; }
 .legend .lg i { width:7px; height:7px; border-radius:50%; display:inline-block; }
 .legend .error i { background:var(--error); } .legend .warn i { background:var(--warn); } .legend .info i { background:var(--info); }
@@ -46,37 +46,36 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); font-si
 .bar-clean { background:linear-gradient(90deg, rgba(63,185,80,0.55), rgba(63,185,80,0.15)); }
 
 .byrule { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 12px; }
-.chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--line); border-radius:5px; font-size:11.5px; }
+.chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--line); border-radius:5px; font-size:12px; }
 .chip code { font-family:var(--mono); color:var(--muted); } .chip b { font-family:var(--mono); color:var(--text); }
 
-.context { font-family:var(--mono); font-size:11.5px; color:var(--faint); }
+.context { font-family:var(--mono); font-size:12px; color:var(--faint); }
 .context .u { color:var(--muted); } .context .ok { color:var(--ok); }
-.gate { margin-top:12px; display:inline-block; padding:4px 10px; border-radius:5px; font-size:11.5px; font-weight:600;
+.gate { margin-top:12px; display:inline-block; padding:4px 10px; border-radius:5px; font-size:12px; font-weight:600;
   color:var(--info); background:rgba(88,157,255,0.08); border:1px solid rgba(88,157,255,0.28); }
 
-table { width:100%; border-collapse:collapse; font-size:13px; }
-thead th { text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--faint); font-weight:600; padding:0 12px 9px; }
+table { width:100%; border-collapse:collapse; font-size:13.5px; }
+thead th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--faint); font-weight:600; padding:0 12px 9px; }
 tbody td { padding:13px 12px; border-top:1px solid var(--line-soft); vertical-align:top; }
 tbody tr:first-child td { border-top:1px solid var(--line); }
 tbody tr:hover { background:rgba(255,255,255,0.015); }
 .c-sev { width:62px; } .c-issue { width:26%; } .c-fix { width:24%; }
 
-.tag { display:inline-block; padding:1px 7px; border-radius:4px; font-family:var(--mono); font-size:10.5px; font-weight:600; }
+.tag { display:inline-block; padding:1px 7px; border-radius:4px; font-family:var(--mono); font-size:11px; font-weight:600; }
 .tag-error { color:var(--error); background:rgba(248,81,73,0.10); } .tag-warn { color:var(--warn); background:rgba(217,154,43,0.10); } .tag-info { color:var(--info); background:rgba(88,157,255,0.08); }
-.sel { font-family:var(--mono); font-size:11.5px; color:var(--muted); word-break:break-all; }
-.rule { display:block; font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:3px; }
+.sel { font-family:var(--mono); font-size:12px; color:var(--muted); word-break:break-all; }
+.rule { display:block; font-family:var(--mono); font-size:10.5px; color:var(--faint); margin-top:3px; }
 .c-issue { color:var(--text); }
-.c-fix { font-family:var(--mono); font-size:12px; color:var(--muted); }
+.c-fix { font-family:var(--mono); font-size:12.5px; color:var(--muted); }
 .c-fix .from { color:var(--error); } .c-fix .to { color:var(--ok); } .c-fix .arrow { color:var(--faint); }
-.c-aff { color:var(--faint); font-size:12px; line-height:1.9; }
+.c-aff { color:var(--faint); font-size:12.5px; line-height:1.9; }
 .c-aff .count { font-family:var(--mono); font-weight:700; color:var(--text); margin-right:6px; }
 .wcag { color:var(--info); white-space:nowrap; } .muted { color:var(--faint); }
 tr.sev-info td { opacity:0.6; }
 tr.empty td { text-align:center; color:var(--faint); padding:30px 12px; }
-tr.more td, tr.grouped td { text-align:center; color:var(--faint); font-size:11.5px; padding:12px; }
-tr.grouped td { border-top:1px solid var(--line); }
+tr.more td { text-align:center; color:var(--faint); font-size:12px; padding:12px; }
 
-.footer { margin-top:28px; padding-top:14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:var(--faint); font-size:11.5px; font-family:var(--mono); }
+.footer { margin-top:20px; padding-top:14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:var(--faint); font-size:12px; font-family:var(--mono); }
 </style>
 </head>
 <body>
@@ -84,7 +83,7 @@ tr.grouped td { border-top:1px solid var(--line); }
   <div class="header">
     <div class="brandline">
       <span class="logo">grid<b>proof</b></span>
-      <span class="stamp">2026-08-13 17:42</span>
+      <span class="stamp">2026-08-13 17:46</span>
     </div>
     <div class="hero">
       <div class="big error">10</div>
@@ -154,12 +153,12 @@ tr.grouped td { border-top:1px solid var(--line); }
         <td class="c-issue">18px off-scale<span class="rule">spacing-scale</span></td>
         <td class="c-fix">padding-top: <span class="to">20px</span> <span class="muted">(inline)</span></td>
         <td class="c-aff"><span class="count">&times;3</span> <code class="sel">#stat-revenue</code> <code class="sel">div &gt; section:nth-of-type(1) &gt; div:nth-of-type(2)</code> <code class="sel">div &gt; section:nth-of-type(1) &gt; div:nth-of-type(3)</code></td>
-      </tr><tr class="grouped"><td colspan="4">10 finding(s) grouped into 8 fix(es), most impactful first.</td></tr>
+      </tr>
     </tbody>
   </table>
 
   <div class="footer">
-    <span>Gridproof v0.1.0 &middot; suggest, don't forbid</span>
+    <span>10 finding(s) grouped into 8 fix(es) &middot; Gridproof v0.1.0 &middot; suggest, don't forbid</span>
     <span></span>
   </div>
 </div>
