@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>gridproof — social card</title>
+<style>
+:root {
+  --bg:#0b0e13; --panel:#12161d; --line:#20262f;
+  --text:#e6edf3; --muted:#8b949e; --faint:#5c6470;
+  --error:#f85149; --warn:#d99a2b; --info:#589dff; --ok:#3fb950;
+  --grid:rgba(255,255,255,0.035);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { width:1200px; height:630px; overflow:hidden; background:var(--bg); font-family:var(--sans); }
+
+.card {
+  position:relative; width:1200px; height:630px;
+  background:
+    radial-gradient(circle at 80% 26%, rgba(88,157,255,0.10), transparent 55%),
+    radial-gradient(circle at 8% 96%, rgba(63,185,80,0.06), transparent 50%),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    var(--bg);
+  background-size: auto, auto, 34px 34px, 34px 34px, auto;
+}
+
+.content {
+  position:relative; z-index:1; display:flex; align-items:center;
+  height:100%; padding:0 72px; gap:60px;
+}
+
+.left { flex:0 0 auto; max-width:460px; }
+.logo { font-family:var(--mono); font-weight:700; font-size:42px; letter-spacing:-0.01em; color:var(--muted); margin-bottom:24px; }
+.logo b { color:var(--text); }
+.tagline { font-size:24px; line-height:1.44; color:var(--text); font-weight:500; letter-spacing:-0.01em; margin-bottom:22px; }
+.tagline .hi { color:var(--ok); }
+.sub { font-family:var(--mono); font-size:14.5px; color:var(--faint); line-height:1.6; }
+.chipbar { display:flex; flex-wrap:wrap; gap:9px; margin-top:28px; }
+.chip { font-family:var(--mono); font-size:12.5px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:5px 10px; background:rgba(255,255,255,0.015); }
+
+.right { flex:1 1 auto; display:flex; justify-content:center; align-items:center; }
+.frame {
+  width:432px; height:246px; border-radius:12px; overflow:hidden;
+  border:1px solid var(--line); background:var(--panel);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02);
+}
+.frame iframe { width:864px; height:900px; border:0; transform:scale(0.5); transform-origin:top left; pointer-events:none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="content">
+      <div class="left">
+        <div class="logo">grid<b>proof</b></div>
+        <div class="tagline">Gridproof your UI — automated spacing &amp; grid QA <span class="hi">in the agent loop</span>.</div>
+        <div class="sub">gp_audit(url) &rarr; JSON fix hints &rarr; agent edits &rarr; clean report</div>
+        <div class="chipbar">
+          <span class="chip">MCP server</span>
+          <span class="chip">Tailwind-aware</span>
+          <span class="chip">WCAG 2.5.8</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="frame"><iframe src="demo-report-mobile.html" scrolling="no"></iframe></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
