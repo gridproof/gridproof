@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — arbitrary Tailwind values</title>
+    <!-- Tailwind CDN so arbitrary classes like p-[13px] actually apply (spec §10). -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="p-6 font-sans">
+    <h1 class="mb-4 text-xl font-bold">Arbitrary-value fixture</h1>
+
+    <!-- VIOLATION: off-scale arbitrary padding → nearest class p-3 (12px). -->
+    <div id="arb-off-scale" data-testid="arb-13" class="p-[13px] bg-indigo-100">
+      p-[13px] — off scale, should suggest p-3.
+    </div>
+
+    <!-- HYGIENE WARN: on-scale arbitrary padding → p-4 (16px). -->
+    <div
+      id="arb-on-scale"
+      data-testid="arb-16"
+      class="mt-4 p-[16px] bg-emerald-100"
+    >
+      p-[16px] — on scale but arbitrary, should suggest p-4.
+    </div>
+
+    <!-- VIOLATION: arbitrary width off scale. -->
+    <div
+      id="arb-width"
+      data-testid="arb-w"
+      class="mt-4 w-[347px] bg-amber-100"
+    >
+      w-[347px] — off scale.
+    </div>
+
+    <!-- Clean control: standard scale class. -->
+    <div id="arb-clean" data-testid="arb-clean" class="mt-4 p-4 bg-sky-100">
+      p-4 — clean.
+    </div>
+  </body>
+</html>

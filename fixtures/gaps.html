@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — gap consistency</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      .card {
+        background: #eef;
+        border: 1px solid #99f;
+        padding: 12px;
+      }
+
+      /* VIOLATION target: ragged list — children spaced by uneven margins,
+         no `gap` on the container → one container-level violation. */
+      #ragged-list {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      #ragged-list .card:nth-child(1) {
+        margin-bottom: 8px;
+      }
+      #ragged-list .card:nth-child(2) {
+        margin-bottom: 20px;
+      }
+      #ragged-list .card:nth-child(3) {
+        margin-bottom: 13px;
+      }
+
+      /* PASS target: systematic gap → silent. */
+      #gap-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 0 0 16px">Gap consistency fixture</h1>
+
+    <section id="ragged-list" data-testid="ragged">
+      <div class="card">Ragged 1</div>
+      <div class="card">Ragged 2</div>
+      <div class="card">Ragged 3</div>
+      <div class="card">Ragged 4</div>
+    </section>
+
+    <section id="gap-list" data-testid="gap">
+      <div class="card">Gap 1</div>
+      <div class="card">Gap 2</div>
+      <div class="card">Gap 3</div>
+      <div class="card">Gap 4</div>
+    </section>
+  </body>
+</html>

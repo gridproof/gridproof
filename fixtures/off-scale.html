@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — off-scale spacing</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      /* VIOLATION target: 13px padding is off the 4px base scale → expected 12px. */
+      #off-scale-box {
+        padding: 13px;
+        background: #eef;
+        border: 1px solid #99f;
+      }
+      /* PASS target: 0.98rem → 15.68px computed, within 0.6px of 16 → on-grid. */
+      #rem-rounded-box {
+        padding: 0.98rem;
+        margin-top: 16px;
+        background: #efe;
+        border: 1px solid #9f9;
+      }
+      /* Clean control: 8px is a valid multiple of 4. */
+      #clean-box {
+        padding: 8px;
+        margin-top: 16px;
+        background: #ffe;
+        border: 1px solid #fd6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 0 0 16px">Off-scale spacing fixture</h1>
+    <div id="off-scale-box" data-testid="off-scale">
+      13px padding — should be flagged, expected 12px.
+    </div>
+    <div id="rem-rounded-box" data-testid="rem-rounded">
+      0.98rem padding (~15.7px) — should NOT be flagged (subpixel tolerance).
+    </div>
+    <div id="clean-box" data-testid="clean">8px padding — clean.</div>
+  </body>
+</html>

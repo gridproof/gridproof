@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gridproof fixture — clean page</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      .panel {
+        padding: 16px;
+        margin-bottom: 16px;
+        background: #eef;
+        border: 1px solid #99f;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      /* Tap target ≥ 44px, all spacing on the 4px scale. */
+      .btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 12px 16px;
+        border: 1px solid #557;
+        background: #fff;
+        cursor: pointer;
+      }
+      /* Canonical icon size (24 ∈ {16,20,24,32,40,48}). */
+      .icon {
+        width: 24px;
+        height: 24px;
+        display: inline-block;
+        background: #99f;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 0 0 16px">Clean fixture</h1>
+    <div class="panel" data-testid="panel">
+      Everything here is on the 4px scale.
+    </div>
+    <div class="row" data-testid="row">
+      <button class="btn" data-testid="ok-button">
+        <span class="icon" aria-hidden="true"></span>
+        OK
+      </button>
+      <button class="btn" data-testid="cancel-button">Cancel</button>
+    </div>
+  </body>
+</html>
